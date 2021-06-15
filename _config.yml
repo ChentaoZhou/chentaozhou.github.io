@@ -1,22 +1,22 @@
-title: Welcome to Flexton
+title: Lyris' Blog
 description: Flexton is a responsive and ultra-minimal theme for Jekyll.
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "flexton.netlify.com" # the base hostname & protocol for your site, e.g. http://example.com
+url: "" # the base hostname & protocol for your site, e.g. http://example.com
 
 # Author
-author-name:    Clayton Hanson
+author-name:    Lyris Li
 author-image:   1.jpg
-author-job:     Web Developer
-author-email:   your-email@domain.com # Add your email for contant form.
-author-twitter: artemsheludko_ # Add your twitter account
-about-author:   I am a web developer focusing on front-end development. Always hungry to keep learning.
+author-job:     Mobile App Developer
+author-email:   li.yirong.z25@gmail.com # Add your email for contant form.
+author-twitter:  # Add your twitter account
+about-author:   Hi. This is a mobile app develper who owns two cats and dreams to travel around the world.
 
 # Social settings
-social-twitter:   artemsheludko_
+social-twitter:
 social-facebook:
-social-github:    artemsheludko
-social-pinterest: artemsheludko
-social-instagram: artemsheludko_
+social-github:
+social-pinterest:
+social-instagram:
 social-youtube:
 social-vk:   
 social-linkedin:
