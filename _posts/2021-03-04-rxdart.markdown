@@ -1,0 +1,286 @@
+---
+layout: post
+title: 简述RxDart
+image: 11.jpg
+date: 2021-03-04 16:36:20 +0200
+tags: [Flutter]
+categories: Flutter
+---
+
+## 响应式编程
+
+首先了解一下响应式编程的基本概念。响应式编程是一种关注**数据流**和**变化的传播**的编程范式。简单地说，就是一个组件可以发射数据流来传播一些更改，其他组件可以通过注册来接收这些更改。Rx（Reactive Extension，或称作ReactiveX）就是响应式编程的一种通用API，包括Dart在内的许多编程语言都提供了它的实现。
+
+我们可以把它理解成一种类似于观察者的模式：
+
+可观察对象（Observable）：我们知道其实被观察的Observable就是一个流，可以把它理解成数据的提供者，它会打包一系列数据并且将它们流式地“发射（emit）”出去，传递给其他的组件。
+
+观察者（Observers）：Observer是数据的“消费者”，它们订阅Observerble，通过回调接收数据或者接收错误，做出“响应”。
+
+那么我们为什么需要这样的响应式编程呢？有一种说法把响应式编程的基本思想解释成运算一些“值随着时间变化”的数据类型，为了表示这种基于时间的变化，我们抽象出了“流”，要监听这种变化并响应则需要对流进行观察（订阅）。其实在一个时间范围内发生数据变化的过程其实就是我们常说的异步数据，当这种变化会随着时间反复的发生，就形成了一个异步数据序列，也就是流。响应式编程可以让我们把这些异步的事件串起来，使我们程序中的异步事件能够更加清晰的被管理和处理。
+
+### BLoC模式
+
+BLoC是Business Logic Component（业务逻辑组件）的简称。它就是一种用响应式编程的方式构建应用和进行状态管理的模式，通常也需要依赖RxDart。它的思想也是将业务逻辑和UI分离开来以贴合类似MVVM的架构。类似我们熟悉的ChangeNotifier，它也是让UI去监听数据的变化，只是这次我们是用**流**来进行数据的传递。在使用Provider进行状态管理的时候，我们经常通过ChangeNotifier的`NotifyListeners`来触发页面的rebuild。在BLoC中，一切都由对流的监听来完成。
+
+![enter image description here](http://km.oa.com/files/photos/pictures/202103/1616675985_49_w_h.png)
+
+一个BLoC实例会维护一个或多个流，根据业务需求我们的应用里可以有多个BLoC。我们在页面上监听流（可以选择使用StreamBuilder来方便地完成），当有数据从流中发射出来时就会触发UI的rebuild。同时，BLoC可以开放流的sink，或是提供封装好的方法给View一侧，让用户的操作也可以产生数据放入流中。
+
+要在我们的Flutter应用中使用BLoC模式，则需要借助Stream（或者RxDart）的帮助。如果你现在还不是非常理解BLoC，没有关系，我们可以先看看RxDart能做什么，之后再来看一些小例子，或许能帮助你理解这个概念。
+
+## RxDart
+
+RxDart就是Dart对Rx标准API的实现。它除了可以支持**异步编程**之外，同样也作为在Flutter中进行**状态管理**的一种手段。不过在了解RxDart之前，要确保你已经对**Stream**，即Dart本身自带的一种响应式编程的实现，有了基本的了解。这个在之前的笔记[Dart的单线程模型与异步编程(Future、Stream)](http://km.oa.com/group/25909/articles/show/451929)中有简单的介绍过。简单地说，它是一个异步数据流，相当于我们刚才讲的概念中的Observable。上面的笔记中也举例说明了如何创建和订阅Stream，使用**StreamController**管理Stream，以及使用StreamTransformer处理流中数据等。我们可以看出Stream已经提供了响应式编程的基本功能了，因此RxDart就是基于Stream并对它进行扩展贴合标准API来实现的。
+
+> 在`pubspec.yaml`中增加依赖：
+>
+> ```dart
+> rxdart: ^0.26.0 // 截止2021/3/4，请前往pub.dev/packages/rxdart查看最新版本
+> ```
+
+总的来说，在RxDart中，StreamController被封装（或者说扩展）成了**Subject**对象，以提供一些额外的功能来满足Rx API的功能。另外，在0.23以前的版本中Stream被封装为Observable，但是现在Observable已经被移除了，改为直接对**Stream**进行扩展。RxDart提供了许多Stream的子类，还有Stream的Extension以扩展它的功能。所以，概括地讲，RxDart主要包含这几个部分：
+
+- Subject类和子类
+- 一系列Stream的子类
+- 一系列Stream的扩展方法(Extension)
+
+除此之外，也包含一些其他的工具或数据类来服务于它所提供的功能。
+
+### Subject
+
+首先来看看Subject。抽象基类Subject本身implement了StreamController类，同时也是Stream的子类。RxDart为我们提供了3种Subject子类的实现。它们的功能类似，本质都是管理一个**广播流**（Broadcast Stream，可以有任意数量订阅者的Stream），但是具体的表现上有一些区别。
+
+#### PublishSubject
+
+PublishSubject是默认的、最基本的Subject。它和我们的StreamController没什么区别（看下源码就会发现它只是做了层封装，其他基本什么都没加）。看看源码里的使用示例：
+
+```dart
+final subject = PublishSubject<int>();
+
+subject.stream.listen(observer1);
+subject.add(1);
+subject.add(2);
+
+subject.stream.listen(observer2); // 源码里这里写成observe2了...
+subject.add(3);
+subject.close();
+```
+
+两个`observer`实际上指的就是注册的回调函数（我们在之前的文章中介绍Stream的时候有解释过这个`listen`方法）。另外，例子中我们创建PublishSubject没有传任何参数，但实际上，和StreamController类似，Subject的构造器都接受回调函数作为可选的参数，包括`onListen`、`onCancel`，即当有订阅者注册和取消时的回调（为什么没有StreamController中的`onPause`、`onResume`呢？因为RxDart不支持订阅的暂停和恢复...）。
+
+#### BehaviorSubject
+
+BehaviorSubject的特点是它总是会缓存最后一个被放入的item（数据或者是error），也就是说，任意时刻，上一个发送的item都会被记录下来。这个记录的item被保存在私有属性中无法直接获取到，但当新的订阅者加入进来时，它就会把这个item发送给这个新订阅者，就像是一个给新来的人一个简单的“前情提要”。源码中的示例：
+
+```dart
+final subject = BehaviorSubject<int>();
+
+subject.add(1);
+subject.add(2);
+subject.add(3);
+
+subject.stream.listen(print); // prints 3
+subject.stream.listen(print); // prints 3
+subject.stream.listen(print); // prints 3
+```
+
+在上面的例子中，我们在三个数据都发射结束之后才加入订阅（假设print是一个打印结果的函数），并且加入了三次。但是每一次我们都依然能够收到先前发送的最后一个数据3。只要Stream还存在，这个数据可以被发送给每个新加入的订阅者。
+
+除了默认的构造方法，BehaviorSubject还有一个构造方法`BehaviorSubject.seeded(T seedValue, {...})`。这个方法需要一个`seed`，它是在还没有任何item被发送的时候的“前情提要”，当还没有数据被放入流中时，加入的订阅者都会先收到这个`seed`。源码中的示例：
+
+```dart
+final subject = BehaviorSubject<int>.seeded(1);
+
+subject.stream.listen(print); // prints 1
+subject.stream.listen(print); // prints 1
+subject.stream.listen(print); // prints 1
+```
+
+这个`seed`为1的subject没有发送任何数据，但是所有加入的订阅者都能在加入时接收到1这个数据。
+
+#### ReplaySubject
+
+不同于BehaviorSubject仅仅捕获上一个item，ReplaySubject会捕获所有已经添加并发送的item，把它们放在一个私有的队列中。在任何时候当一个新的订阅者注册进来时，ReplaySubject都会把这些过去所有记录的item发送给它。就像它的名字"Replay"，它会给新来的人回放所有过去发生的事情。看看源码中的例子：
+
+```dart
+final subject = ReplaySubject<int>();
+
+subject.add(1);
+subject.add(2);
+subject.add(3);
+
+subject.stream.listen(print); // prints 1, 2, 3
+subject.stream.listen(print); // prints 1, 2, 3
+subject.stream.listen(print); // prints 1, 2, 3
+```
+
+这一次在1、2、3都已经发出后添加的订阅都完整的收到了过去所有的数据。
+
+默认的情况下，所有item都会被存放，队列的长度不会被限制。但是ReplaySubject构造方法的可选参数中包含一个`maxSize`，设定这个值就可以限制保存的item的数量，使新加入的订阅只能接收到一部分过往数据。每次有新的item被放入进来的时候，如果队列的长度达到了这个最大值，队首那个最早的item就会被移除掉。
+
+```dart
+final subject = ReplaySubject<int>(maxSize: 2);
+
+subject.add(1);
+subject.add(2);
+subject.add(3);
+
+subject.stream.listen(print); // prints 2, 3
+subject.stream.listen(print); // prints 2, 3
+subject.stream.listen(print); // prints 2, 3
+```
+
+当我们把`maxSize`设置为2之后，无论之前发送了多少数据，ReplaySubject都只会为新来的订阅者回放最后的两个。
+
+### 使用
+
+如果需要使用数据流异步(或同步)更新UI，我们知道Stream有与之配合的StreamBuilder，由于Subject类也是Stream的子类，所以我们也可以将一个Subject放到StreamBuilder中使用，方式和Stream一样。我们也知道Subject是对StreamController的扩展，所以我们也可以在任何使用StreamController的地方直接替换为使用Subject。
+
+但是你或许会有一些疑问：RxDart提供的这些Subject有什么意义？有什么使用场景？
+
+#### 例1：计数器
+
+现在来看一个最简单的计数器例子：
+![enter image description here](http://km.oa.com/files/photos/pictures/202103/1616677398_97_w3234_h2204.png)
+
+就是这么个东西，用BLoC模式实现计数器的状态在两个页面之间共享，两个页面都可以对计数器做add操作。
+
+首先，我们维护了一个Stream的BLoC（在应用中，通常需要一个基类来规范BLoC的接口，这里先省略了。）
+
+注意，这里首先用的是简单的StreamController，而不是Subject，这样会造成一些问题，我们之后再来讨论。
+
+```dart
+class CounterBloc {
+  int _counter = 0;
+  StreamController<int> _counterController = StreamController<int>.broadcast();
+  
+  Stream<int> get stream => _counterController.stream;
+
+  void addToCounter() {
+    _counterController.sink.add(++_counter);
+  }
+
+  void closeSink() {
+    _counterController.close();
+  }
+}
+```
+
+封装一个Provider把它挂在应用的根部方便我们取到BLoC。当然这里用其他方式也是可以的。挂Provider的过程在这里就不赘述了。
+
+```dart
+class BlocProvider {
+  final CounterBloc _counterBloc;
+  BlocProvider(this._counterBloc);
+  CounterBloc get counterBloc => _counterBloc;
+}
+```
+
+接下来是第一个页面的State的部分，主要就是用StreamBuilder监听Stream，以及调用我们BLoC的接口向Stream中发送数据。第二个页面的代码也非常相似，在这里也不赘述了。
+
+```dart
+... ...
+class _CounterState extends State<CounterPageFirst> {
+  int _counter = 0;
+  var _provider;
+  
+   @override
+  void initState() {
+    _provider = Provider.of<BlocProvider>(context, listen: false);
+    _subscription = _provider.messageBloc.stream.listen((event) {
+      setState(() {
+        _messageList.add(event);
+      });
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Counter Page 1')),
+      body: Container(
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                StreamBuilder(
+                  stream: _provider.counterBloc.stream,
+                  initialData: _counter,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      _counter = snapshot.data;
+                    }
+                    return Text('$_counter', style: TextStyle(fontSize: 50));
+                  },
+                ),
+                FlatButton(
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => CounterPageSecond())),
+                  child: Text('Open the second page'),
+                  color: Colors.grey[300],
+                )
+              ])),
+      floatingActionButton: FloatingActionButton(
+          child: Text('add'),
+          onPressed: () => _provider.counterBloc.addToCounter()),
+    );
+  }
+}
+... ...
+```
+
+现在问题来了：如果你尝试写了这样一个demo，你就会发现它存在一个bug——当我们离开第二个页面再重新打开它，它展示的counter又会变成0，直到我们再次点击add按钮，它才会被更新成正确的数字。**因为在我们重新打开第二个页面的时候，等于重新的订阅了这个流，而在我们订阅之后，暂时还没有新的数据被发送，所以我们展示的值只能是页面构建时的初始值0。**
+
+这时候，如果能给新订阅的页面重新发送一下上一个数据就好了。这就是BehaviorSubject的出场时刻了：将StreamController替换成BehaviorSubject，新的页面打开时产生的新订阅会立即收到流中上一个发射的数据，也就是当前最新的状态。问题解决了~它轻松地解决了这个中途加入监听无法及时同步数据的问题，让BLoC可以像这样轻松的应用在我们的程序中。
+
+有了这个例子，我们也可以想象出ReplaySubject可能的使用场景了。再写一个简单的例子：
+
+#### 例2
+
+![enter image description here](http://km.oa.com/files/photos/pictures/202103/1616742525_30_w3282_h2222.png)
+
+和计数器的逻辑类似，我们在两个页面都展示一个消息列表，并且两个页面都可以发送消息，并且同步的接收到消息。显然，我们可以用一个String类型的数据流来完成这个过程。为了让每次新的页面都能显示所有消息的记录，我们可以使用ReplaySubject来达到这个目的。
+
+但是在完成这个例子的过程中，我遇到了一个问题（并且还没得到解决）：在这种情况下ReplaySubject并不能很好地配合StreamBuilder使用。当新的页面被打开时，ReplaySubject的确发送了所有的历史数据给新页面中的StreamBuilder，但是，断点显示，虽然在源码中StreamBuilder的setState被连续的调用多次，但是builder函数却仅仅只在最后一次setState时被调用了。因此，实际展示出的效果类似使用BehaviorSubject的效果。但是，如果不使用StreamBuilder，手动对ReplaySubject注册监听并调用setState就不会存在这样的问题。
+
+这个例子和上面的计数器的代码都在这里：https://github.com/HeheLi25/rx_demo
+
+### 对Stream的扩展
+
+之前说到除了用Subject扩展StreamController之外，RxDart还提供了Stream的一系列子类和Extension。这些子类提供各种特殊的Stream，Extension扩展了大量的方法，提供了很多方便的功能。
+
+在刚才的例子中，我们仅仅只是通过流来传递了一些数值和字符串，但是在实际的应用中，可能会涉及到更加复杂的业务逻辑。下面列举了一些Stream扩展的子类和方法，或许它们有一些看起来功能很奇特，但是它们也一定在某些特定的业务场景可以发挥出作用：
+
+Stream子类（以及相应静态操作符）：
+- `MergeStream(Iterable<Stream<T>> streams)`：接受一系列Stream，将它们压平合并生成一个Stream，将来自它们的数据以一个序列发射。
+- `TimerStream(T value, Duration duration)`：每隔一段特定的时间发送一个值。
+- `ConnectableStream<T>(Stream<T> stream)`：广播流，只有当它的`connect`方法被调用时才会开始发送数据，可以用来包装单播流。
+- `RaceStream(Iterable<Stream<T>> streams)`：接受多个流，只转发其中第一个发送数据的流的数据。
+... ...
+
+实际上在使用时，我们一般可以直接使用抽象类`Rx`提供的静态方法（或者称作Operator，操作符）。它们的参数和对应的Stream构造器一致，实际上也只是帮我们完成了构造操作，返回相应Stream。例如：
+- `Rx.merge => MergeStream`
+- `Rx.timer => TimerStream`
+- `Rx.race => RaceStream`
+- `Rx.concact => ConcactStream`
+... ...
+
+扩展的实例方法：
+- `Stream<T> concatWith (Iterable<Stream<T>> other)`：返回的Stream会发射所有来自当前Stream的数据，然后会依次发送来自传入的Stream中的数据（流的链接）。
+- ` Future<T> min([Comparator<T>? comparator])`：将一个Stream转换成一个Future，最终返回Stream所发送过的最小的数据（还有`max`方法同理）。
+- `Stream<T> takeUntil<S>(Stream<S> otherStream`：发送源Stream发送的数据，直到从另一个Stream接收到数据时停止。
+- `Stream<T> interval(Duration duration)`：每次都在延迟一段时间后转发另一个流中的数据。
+... ...
+
+除了这些之外还有非常非常多，具体可以看官方文档中的详细列举：[RxDart Documentation](https://pub.dev/documentation/rxdart/latest/index.html)。
+
+总而言之，RxDart让我们可以方便地去构建一个基于流来进行状态管理的响应式应用。但是，在我看来，不同的状态管理方式综合上来讲并没有明显的优劣之分，就像文档App中普遍使用的ChangeNotifierProvider也可以为我们的应用带来响应变化的能力。它们的实现、性能、逻辑甚至可能都差别不大，只是我们抽象地看待它们的方式有所不同。我们可以根据不同场景和自己的喜好来做出最好的选择。
+

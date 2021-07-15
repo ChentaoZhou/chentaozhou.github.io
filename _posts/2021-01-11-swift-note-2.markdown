@@ -7,7 +7,7 @@ tags: [iOS, Swift]
 categories: iOS
 ---
 
-## <h2 id="1">ViewBuilder</h2>
+## ViewBuilder
 
 ViewBuilder的存在，是基于Swift的一种支持“面向列表的语法(list-oriented syntax)”的技术。它让我们可以用更方便的语法来管理View的列表。
 
@@ -34,7 +34,7 @@ func front(of card: Card) -> some View {
 
 ---
 
-## <h2 id="2">Property Observer</h2>
+## Property Observer
 
 Property Observer是一种”监视“一个变量的方式，可以当这个变量被改变时去执行一些代码。比方说下面这个例子，其中`newValue`就是即将被设置上去的新值。
 
@@ -54,7 +54,7 @@ var isFaceUp: Bool {
 
 ---
 
-## <h2 id="3">@State</h2>
+## @State
 
 要注意，在SwiftUI中，我们的View都是read-only的。可以把他们都当成`let`，不能被改变。我们自己设置变量`var`仅仅是让这个变量在View被创建时被赋值，并不意味着它们之后还可以被更改。函数式编程的其中一个特点就是，它里面的东西的**可变性**都非常清晰，所以我们可以清楚地知道什么可以变，当有东西改变时，我们也可以很容易地知会。
 
@@ -70,7 +70,7 @@ var isFaceUp: Bool {
 
 ---
 
-## <h2 id="4">Gesture手势</h2>
+## Gesture手势
 
 **获取用户输入**
 
@@ -183,7 +183,7 @@ var theGesture: some Gesture {
 
 ---
 
-## <h2 id="5">Swift多线程</h2>
+## Swift多线程
 
 ### 队列
 

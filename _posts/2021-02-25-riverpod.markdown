@@ -1,0 +1,297 @@
+---
+layout: post
+title: Flutter状态管理 - Provider的升级版——Riverpod
+image: 9.jpg
+date: 2021-02-25 16:36:20 +0200
+tags: [Flutter]
+categories: Flutter
+---
+
+在之前的笔记中曾经简单的介绍了Provider/Consumer的简单使用，也提到它是一种在Flutter应用中进行应用程序状态管理的方式（事实上它是目前官方最为推荐的方式）。后来，Provider的作者又推出了一个更新的方案，叫做"Riverpod"。这个名字很有意思，它包含的字母和Provider一模一样，只是顺序不同。这个方案号称是对Provider的改进，具有Provider的优点的同时又弥补了它使用上的缺陷。虽然现在它才出现没有多久，也还没有被广泛的使用，但是听起来好像很值得一试。那么这篇文章我们就来简单的讨论一下状态管理、Provider和Riverpod。
+
+## 状态管理方案
+
+![ui-equals-function-of-state-54b01b000694caf9da439bd3f774ef22b00e92a62d3b2ade4f2e95c8555b8ca7](https://flutter.dev/assets/development/data-and-backend/state-mgmt/ui-equals-function-of-state-54b01b000694caf9da439bd3f774ef22b00e92a62d3b2ade4f2e95c8555b8ca7.png)
+
+首先在进入正题前，先来讨论一下讨论一下应用程序状态管理的概念。官方文档中的这张图很好地解释了Flutter的声明式UI根据“状态”来构建UI的逻辑。UI是“状态”的展示，我们在需要的时候就可以更改状态，触发页面的重新绘制，这就是Flutter更新UI的过程。
+
+在刚开始学习Flutter的时候我们都会首先去了解StatelessWidget和StatefulWidget，并且得知StatefulWidget具有方便地重绘以更新UI的能力。很多时候它确实很好用，但是很快我们会知道，我们不能过度依赖StatefulWidget，因为它其实有成本高、不易维护且局限的缺点。首先，`setState()`非常简单粗暴，它只是简单的重新build，也就是使得所有的子Widget都重新构建，并不会精准的更新真正依赖所变化的数据的那个子节点。如果我们的StatefulWidget有很多的子节点，更新的代价就会非常的大。因此我们通常会尽量的使StatefulWidget更“小”一些，只在需要一些短效的动态数据的小模块中使用它。其次，很多时候使用StatefulWidget很容易将UI和数据、业务逻辑混合在一起，这样的耦合过多会使得代码不那么容易被测试和维护。另外，它的数据也仅供自身使用，与其他模块都没有关系，当Widget被销毁，状态也就不存在了，下次创建又会再次初始化，所以这种状态也被称作**ephemeral state(临时状态)**。
+
+不同于临时状态，我们经常还需要考虑**"应用程序状态"(app state)**，或者说叫做**全局状态**。这种状态指的是一些需要被用在多个Widget或模块的数据。它依然符合上面图中的"公式"，只是一个状态可以被多个Widget绑定和共享。当这些数据被改变的时候，可以有多个模块同时知会这样的变化并且做出即时的更新。有这样需求的场景是非常多的，通用的包括Theme(主题/颜色模式)和语言的更改，更细的场景例如购物车、收藏、登录状态等等。要实现这样的需求，就要涉及到数据的传递，或者说流动。
+
+在Flutter中，我们有很多可选的方案来进行状态(主要是全局状态)的管理。官方教程中就列举了十种选项：
+
+> - **Provider：推荐的方案！**
+> - InheritedWidget和InheritedModel：Widget树中的祖先和child之间进行通信的低级方法(其实就是provider等方法的下层实现)。
+> - Redux：Web开发人员比较熟悉的一种"状态容器"方法。
+> - Fish Redux：阿里闲鱼团队开发的基于Redux的组合式Flutter应用框架，适合中型和大型应用。
+> - BLoC/Rx：基于Stream/Observable的一种模式族。
+> - GetIt：基于service locator(服务定位器)的状态管理方法，不需要`BuildContext`。
+> - FlutterCommands：使用Command模式、基于`ValueNotifier`的响应式状态管理。最好和GetIt一起使用，但也可以和Provider等一起使用。
+> - Binder：使用`InheritedWidget`作为核心的状态管理包，受到Recoil的启发，促进了关注点的分离。
+> - GetX：一个简化的响应式状态管理方法。
+> - **Riverpod：和Provider相似的较新的方法**，可安全编译且可测试。不依赖Flutter SDK。
+
+可选的方法非常多，在不同的业务场景下，不同的开发者也会有不同的选择。虽然也有很多人更加青睐BLoC，Redux等等方法，但Provider依旧是Flutter目前最推荐的方法。那么Riverpod要如何做到锦上添花呢？这不由得令人好奇。
+
+### Provider
+
+简单的回顾一下Provider。Provider是依赖`InheritedWidget`实现的，我们知道它的实现方式是将数据从树上方的节点向它下方的子节点传递，并且配合Listener模式去更新依赖它的UI。这在之前的笔记中也有给出例子。简单的概括就是将我们的数据类实例(Model)包裹在某一个上层的节点上，然后它的子节点就可以根据特定的Model类型，沿着树获取到它，并且与之绑定成为数据的监听者。总的来说，它所做的就是：
+
+- “提高”数据所在的“位置”，利用`InheritedWidget`，使得下方节点可以获取并操作数据。
+- 利用监听者模式来更新UI。
+
+不少开发者认为Provider是他们认为最好用和易懂的方法，同时它也是Flutter官方最推荐的方法。腾讯文档App中也统一使用Provider作为状态管理的方式。`InheritedWidget`为我们提供了传递数据的能力，但它的细节和原理读起来有些晦涩，Provider很好地简化了对它的使用，掩盖了其中比较复杂的操作，配合Listener这种亲民的设计模式，使用起来对开发者非常友好。
+
+下面这张图就是教程中的一个直观的例子，我们把购物车数据放在了应用的根节点MyApp上，底下的节点都可以去获取和访问它。像图中的箭头表示的就是从一个目录中将Item添加进购物车，在购物车页面也能获取到即时的更新。
+
+![simple-widget-tree-with-cart-7665e5a1a8bfdc2c04f2cb6dcb59dabbf0291dc44b8b7f08f6a2e798e6080c9c](https://flutter.dev/assets/development/data-and-backend/state-mgmt/simple-widget-tree-with-cart-7665e5a1a8bfdc2c04f2cb6dcb59dabbf0291dc44b8b7f08f6a2e798e6080c9c.png)
+
+
+
+虽然Provider这么好用，但是一个方案总不会是完美的。那在我们开始了解Riverpod之前，先来看看它到底想要解决Provider在使用上存在的哪些问题呢？
+
+1. 依赖注入与UI混合在一起。
+
+我们把一个Provider和一个Widget节点绑定起来的过程是通过在声明UI时额外增加一层嵌套来实现的，那如果我们的多个Provider之间存在依赖关系，可能需要使用`ProxyProvider`来进行连接，那么嵌套就更多了。这种代码的混杂使得UI的声明变得有些难以阅读。比如下面这个例子，要创建出一个依赖于MyFirstClass的MySecondClass实例并绑定，需要在UI的声明中添加两层嵌套：
+
+```dart
+class MyWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Provider(
+      create: (context) => MyFirstClass(),
+      child: ProxyProvider<MyFirstClass, MySecondClass>(
+        update: (context, firstClass, previous) => MySecondClass(firstClass),
+        child: ... // 真正展示的UI的代码
+      ),
+    );
+  }
+}
+```
+
+2. 子节点需要在运行时根据类型来搜索Provider，且如果有多个同类型的Provider则只能得到较近的那一个。
+<img src="https://codewithandrea.com/videos/flutter-state-management-Riverpod/images/widget-tree-provider-not-found-exception.png" alt="widget-tree-provider-not-found-exception" />
+
+子节点在使用绑定在上层的Provider时总是靠`Provider.of<Type>(context)`方法，根据特定的Provider类型来找到特定的Provider。如果在上层没有找到，则会抛出`ProviderNotFoundException`。在较复杂的大型应用中这样的问题是有可能出现的。如果能够在编译时就把Provider的访问权限弄清楚，保证运行时的安全，就可以省去这样的麻烦了。上面这张图展示了这种异常发生的情况。另外，假设图中在AuthWidget层也存在一个类型为Auth的Provider实例的话，那么下层在试图用Auth获取Provider时就只能获取到AuthWidget的Provider实例了，MaterialApp层的Provider会变得无法获取。
+
+### Riverpod
+
+那么接下来我们就来看看Riverpod是怎么使用的吧！
+
+> 安装：https://pub.dev/packages/flutter_riverpod
+
+#### ScopeProvider
+
+在Riverpod中，我们使用一个放置在Widget树根部的Widget用于存储Provider状态。之后我们的Provider基本上都会存储在这里。
+
+```dart
+void main() {
+  runApp(ProviderScope(child: MyApp()));
+}
+```
+
+虽然我们可以抽象把ScopeProvider看做是一个Provider容器，但是实际实现上并没有这么简单。它的本质是一个**StatefulWidget**。在它的State中，build方法创建并返回了一个**UncontrolledProviderScope**对象。这个对象是一个**InheritedWidget**！它包含一个**ProviderContainer**类型的引用，这个ProviderContainer才是真正存放Provider的**容器**。而UncontrolledProviderScope的作用就是把它暴露给Widget树。还记得旧的Provider方案中，我们需要使用`dependOnInheritedWidgetOfExactType`和`getElementForInheritedWidgetOfExactType`在树中寻找我们的Provider吗？在Riverpod中，我们也同样利用Widget树来获取Provider，只是这次我们不需要用Provider的类型来找，而是统一搜索**UncontrolledProviderScope类型**就可以了！因为我们的Provider本身并没有分布在树中，而是统一存储在ProviderContainer中。只要我们在树中找到UncontrolledProviderScope，就能通过它获取到这个ProviderContainer，并且访问其中的Provider。因此，在根节点放置ProviderScope，可以保证我们再应用的任何地方都可以访问到我们的Provider。
+
+另外，除了在根节点处使用之外，我们也可以在其他的Widget中使用ProviderScope来在此处override其中的一些Provider，使他们在后续的子节点中表现出不同的行为。这一特点也可以在测试时用来模拟一些在测试环境中受限的Provider。这个我们最后再做讨论。
+
+接下来我们来看看怎么创建Provider和怎么在Widget中使用他们。先从一个最简单的Counter的例子开始。
+
+首先，我们要创建一个Provider，并且在UI中获取它包含的state数据。如果我们仅仅是想获取这个值，那么可以直接使用`Provider`类型。但是此处我们不仅需要获取，还需要更新这个值，所以我们需要使用`StateProvider`类型。
+
+#### StateProvider
+
+```dart
+final counterStateProvider = StateProvider<int>((_) {
+  return 0;
+});
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Consumer(
+          builder: (_, ScopedReader watch, __) {
+            final value = watch(counterStateProvider).state;
+            return Text(
+              'Value: $value',
+            );
+         })));
+  }
+}
+```
+
+在这段代码顶端，我们创建了一个全局的StateProvider实例。它的构造器接受一个用于创建state的值的函数。这里我们直接返回一个0的初始值。然后在我们的build方法中我们声明了一个`Consumer`，它的父类型是`ConsumerWidget`，本质就是一个StatefulWidget。最关键的是，Consumer的builder为我们提供了一个**ScopedReader**类型的参数`watch`，它其实是一个接收一个Provider引用的**函数**，返回一个**StateController**对象，这个对象包含**state的getter和setter**让我们可以去获取和修改state的值。于是我们调用它并传入`counterStateProvider`引用，得到的返回值并且获取它的state，就是我们想要的counter值了！
+
+除了直接声明封装好的Consumer之外，我们也可以选择让我们的Widget类直接继承`ConsumerWidget`，它的`build`函数会直接提供ScopedReader给我们：
+
+```dart
+class MyHomePage extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, ScopedReader watch) {
+    final value = watch(counterStateProvider).state;
+    return Scaffold(
+      body: Center(
+        child: Text(
+            'Counter value: $value',
+        )));
+  }
+}
+```
+
+可以看出，Riverpod不像原本的Provider方案那样通过类型来获取Provider实例，而是直接使用ScopedReader函数利用**引用**来访问Provider。所以，我们可以拥有相同类型的Provider，而不会出现无法访问到Provider的情况。同时，我们在一个位置是否能访问某个引用，这是在编译阶段就能确定的，不会存在运行时发现找不到Provider的情况。
+
+接下来看我们怎么去更新这个值。增加一个加号按钮：
+
+```dart
+floatingActionButton: FloatingActionButton(
+  onPressed: () => context.read(counterStateProvider).state++,
+  child: Icon(Icons.add),
+),
+```
+
+FloatingActionButton中，我们调用了context的`read`方法。这个方法类似`watch`，但是仅仅获取StateController而不监听Provider。它其实是Riverpod中包含的一个BuildContext类的Extention定义的。就像上面介绍ProviderScope时说的那样，它会通过context，利用UncontrolledProviderScope在树中找到我们在祖先节点中的ProviderContainer。
+
+从这个简单的例子我们可以基本的了解Riverpod的用法了，它和Provider有很多细节的不同。但是只要能理解和习惯用`ScopedReader watch`和`context.read`进行Provider读写的思路，使用起来的感觉和Provider一样简单顺滑。
+
+不过，在实际的项目中，我们通常不是简单的用Provider包裹一个值。我们的state通常与很多业务逻辑密切相关，这些逻辑需要从我们的Widget类中分离出来。这时候我们就需要用到StateNotifierProvider了。
+
+#### StateNotifierProvider
+
+Riverpod依赖于state_notify库，所以我们安装了Riverpod之后就不需要额外安装它了。它为我们提供了StateNotifier类，它类似于ChangeNotifier或者ValueNotifier，不过它会保存一个state。在上面的计数器例子我们也可以用它来实现，这样可以把计数器增加的逻辑分离出来：
+
+```dart
+class Counter extends StateNotifier<int> {
+    Counter(): super(0);
+    void increment() => state++;
+}
+```
+
+这也是源码文档中提供的例子。不过这个逻辑太简单了，看起来并不是特别的必要。接下来我们看另一个小例子：
+
+假设我们想要展示出当前的时间并且每隔一秒更新，来达到一个时钟的效果。也就是说，这里业务逻辑就是"周期性获取时间"。这时候我们就需要一个Timer来周期性的更新我们的state，相应的也需要一个取消timer的方法：
+
+```dart
+class Clock extends StateNotifier<DateTime> {
+  Clock() : super(DateTime.now()) {
+    _timer = Timer.periodic(Duration(seconds: 1), (_) {
+      state = DateTime.now();
+    });
+  }
+  Timer _timer;
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+}
+```
+
+接下来我们就可以创建Provider了。这一次，我们使用StateNotifierProvider，传入的构建state的函数返回一个Clock实例。
+
+```dart
+final clockProvider = StateNotifierProvider<Clock>((ref) {
+  return Clock();
+});
+```
+
+接下来在UI中使用它的数据：
+
+```dart
+class MyHomePage extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, ScopedReader watch) {
+     final currentTime = watch(clockProvider.state);
+    return Scaffold(
+      body: Center(
+        child: Text(
+            'Time: $currentTime',
+        )));
+  }
+}
+```
+
+细心的你可能会发现，这一次我们传给`watch`的不是`clockProvider`，而是`clockProvider.state`。它获取到的是一个**StateNotifierStateProvider**类型的对象。对于StateNotifierProvider，它所保存的状态是我们的Clock实例，也就是StateNotifier对象，相当于在最终的state外多包裹了一层。而这个Provider类型的作用就是将StateNotifier中的state暴露出来。因此我们要先获取到**StateNotifierStateProvider**，再把它传入`watch`。其他的就和Provider或StateProvider没什么区别啦。
+
+#### ProviderScope的override
+
+正如我们在开头讨论ProviderScope时所说的那样，除了用在根节点外，在源码中还给出了ProviderScope的其他使用方式：
+
+1. 在子节点override一些Provider的行为。
+
+```dart
+final themeProvider = ScopedProvider((ref) => MyTheme.light());
+
+void main() {
+  runApp(
+    ProviderScope(
+      child: MaterialApp(
+        home: Home(),
+        routes: {
+      '/gallery': (_) => ProviderScope(
+            overrides: [
+              themeProvider.overrideWithValue(MyTheme.dark()),
+            ],
+  )})));
+}
+```
+
+在这个例子中，我们在根节点包装了ProviderScope的同时，在`'/gallery'`这一路由的位置又放置了一个ProviderScope，并且使用`overrideWithValue`重写了一个Provider。这样一来，在这个路由以及它的子孙节点中，这个Provider会展现出新的行为。而在它上方的节点中，依然只能获取到顶部的Provider。这时你可能会想问，那之前说在Provider方案中，相同类型的Provider我们只能获取到较近的那个，那在Riverpod中，在下方的ProviderScope底下的节点是否就不能获取到顶部的ProviderScope了呢？其实，在ProviderContainer中有一个parent字段保存了它的"父"Container，树根的Container的这个字段是为空的。逻辑上有点类似于类的继承关系，其中的Provider就是子类可重写的行为。因此，这种情况是不会发生的。
+
+2. 在测试时override一些需要被模拟的Provider行为。
+
+```dart
+testWidgets('Test example', (tester) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        repositoryProvider.overrideWithProvider(
+          Provider((_) => FakeRepository()),
+        ),
+      ],
+      child: MyApp(),
+    ));
+  }
+);
+```
+
+从刚才讲第一点的时候可能你就能想到，这种override放在测试的时候，用来提供一个假的(模拟的)Provider行为也会非常方便。
+
+#### FutureProvider、StreamProvider
+
+在之前讨论异步编程的笔记中，最后提到Flutter为我们提供了用于异步更新UI的Widget类型，FutureBuilder & StreamBuilder。它们用起来非常方便，原理也清晰易懂。但是Riverpod利用Provider的模式为我们提供了更简便的工具：FutureProvider & StreamProvider。
+
+看看例子：
+
+```dart
+final futureProvider = FutureProvider<int>((ref) {
+  return Future.value(36);
+});
+
+final streamProvider = StreamProvider<int>((ref) {
+  return Stream.fromIterable([36, 72]);
+});
+
+class MyHomePage extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, ScopedReader watch) {
+    final streamAsyncValue = watch(streamProvider);
+    //或者: final futureAsyncValue = watch(futureProvider);
+    return Scaffold(
+      body: Center(
+        child: streamAsyncValue.when(
+          data: (data) => Text('Value: $data'),
+          loading: () => CircularProgressIndicator(),
+          error: (e, st) => Text('Error: $e'),
+     )));
+  }
+}
+
+```
+
+相比FutureBuilder & StreamBuilder中通过回调判断`snapshot`状态来作出不同反应的方式，这样似乎代码要更为简洁：我们通过`watch`这两种Provider来获取到一个AsyncValue对象。这个AsyncValue是一个用来操作异步数据的类型，它会要求我们必须提供loading、error的状态下的操作。在这里我们调用它的`when`方法来传入各种情况下的回调函数。是不是既简洁又好用呢！
+
+---
+
+以上这些就是RiverPod的一些基本功能和用法了。除了这些之外，它其实还提供了其他更高级或更细节的功能。由于目前没有使用的场景，现在在这里就不做讨论了。总的来说，和Provider相比它确实具有它所说的那一些优点，如果有机会我可能会选择尝试使用它或者和Provider一起配合使用。不知道你对它的印象怎么样呢？
+

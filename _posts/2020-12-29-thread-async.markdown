@@ -18,7 +18,7 @@ categories: Flutter
 
     所以说，在Dart层中所做的事其实是有限的，对于网络操作、I/O等等可能耗时的操作，Dart只需要在获取到结果时可以收到通知并且执行后续操作就可以了。那么只要有能力避免线程被等待所阻塞，就可以用单线程来避免多线程存在的可能会很复杂的同步问题。这时候就要让事件队列和事件循环出场了。
     
-## <h2 id="1">事件循环和事件队列</h2>
+## 事件循环和事件队列
 
 单线程模型使得我们的任务只能由一个线程按照顺序依次来执行。在Dart中，这个运行main函数的线程被称为main isolate。这个所谓的isolate其实就是类似与线程thread的存在，但是又略有区别，这个我们后面再进行讨论。
 
@@ -40,7 +40,7 @@ categories: Flutter
 
 那么要进行异步操作就很简单了：我们只需要创建一个任务，把它加到某个事件队列中去，就可以让我们的线程在**之后的某个时间再去执行它**。
 
-## <h2 id="2">创建异步任务<h2>
+## 创建异步任务
 
 **创建microtask微任务**
 
@@ -56,7 +56,7 @@ Future.microtask(() => print('This is also a microtask'));
 
 我们可以通过创建`Future`对象来创建一个事件队列上的任务，这是Dart为我们提供的一个包装。
 
-### <h3 id="2.1">Future的使用</h3>
+### Future的使用
 
 顾名思义，Future就是未来，`Future`类型代表的就是一个会在未来某个时刻得到的返回值（也可以没有返回值，只是使一些操作在未来特定的时候执行）。我们可以在创建时给它传递一个闭包，其中的操作就作为一个任务被放进事件队列中去了。
 
@@ -145,7 +145,7 @@ main() {
 // Hello
 ```
 
-### <h3 id="2.2">异步函数：async和await</h3>
+### <异步函数：async和await
 
 我们知道，异步函数会在操作还没有完成的时候就返回。那么在Dart中，很好理解，我们可以使函数返回一个`Future`对象，`Future`中的操作的返回值才是异步函数真实的返回值。拿到返回的`Future`之后，我们就可以通过使用`.then()`来定义操作真正执行之后需要进行的处理或者回调。
 
@@ -190,7 +190,7 @@ flutter: !
 
 这里要注意的一点是，`main end`并不会等待`asyncHello`完全执行结束再执行。也就是说`async`和`await`的效果不会传递到调用者，也就是`main`函数中。我们存入事件队列的操作和上下文，仅仅局限于这个异步函数内部。如果想让`main`也进行等待，则需要将`main`也用`async`标记，并且将`asyncHello`调用标记为`await`。
 
-## <h2 id="3">Dart多线程机制</h2>
+## Dart多线程机制
 
 虽然说Dart是默认单线程的，但是它其实也提供了多线程的机制。刚才说过，Dart中的主线程是main isolate，我们也可以创建其他的isolate，以达到多线程的效果。在我们实际进行Flutter项目的开发中，我们可能会需要一些耗时操作并发进行，使其不影响需要及时作出的相应，这时候我们就要创建新的isolate来完成这些操作了。
 
@@ -231,7 +231,7 @@ typedef _ComputeImpl = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, 
 
 可以看看腾讯文档项目中的`IsolateRunner`：https://git.code.oa.com/tencent-doc/TencentDocsApp/tree/master/packages/IsolateRunner （willisdai）
 
-## <h2 id="4">Stream</h2>
+## Stream
 
 一个写的很好的介绍：[Dart | 什么是Stream (by Vadaski)](https://juejin.cn/post/6844903686737494023)
 
@@ -364,7 +364,7 @@ stream.take(4);
 
 上面这个例子中，我们定义了一个`StreamTransformer`，用它的`fromHandlers`方法为它定义了一个处理数据的函数。其中的参数`value`代表输入流中的数据，`sink`代表新的输出流的输入入口池。我们可以在其中对输入流的数据做处理，输出对应的数据到新的流中。在这个例子中输入流的类型是`int`，输出流是`String`。然后我们对这个`int`类型的流调用`transform`来将这个Transformer应用在它身上。这时返回的值就已经是一个`String`类型的新流了。我们再链式的调用`listen`，这时我们监听的，其实就是这个新的流了，因此回调函数中打印出来的就是我们在Transformer中定义的`String`类型的数据了：`还没猜中，再试一次吧/你猜对了`。
 
-## <h2 id="5">异步更新UI</h2>
+## 异步更新UI
 
 我们在Flutter应用的开发中，使用一些异步数据来更新UI可能会是非常常见的需求。例如需要从互联网上获取数据来展示，或是需要用Stream来持续的展示某个事件的进度。为了方便满足这个要求，Flutter为我们提供了两个Widget类：**FutureBuilder**和**StreamBuilder**。
 

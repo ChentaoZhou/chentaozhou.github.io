@@ -1,0 +1,415 @@
+---
+layout: post
+title: Flutter Package、Plugin及PlatForm Channel概述
+image: 12.jpg
+date: 2021-04-19 16:36:20 +0200
+tags: [Flutter]
+categories: Flutter
+---
+
+
+## Package
+
+### 使用package
+
+Flutter官方文档中清晰地概括了package的关键功能：“使用package可以创建可轻松共享的模块化代码。”其实就是我们将一些实现特定功能的代码打成包，使它能够被我们甚至更多人在项目中复用。package包含两种类型：Dart Package和Plugin Package。
+
+- Dart Package：用Dart语言编写的package。提供的可能是通用的功能，例如基于Dart核心库扩展的工具；也可能是依赖Flutter框架的特定功能，例如UI组件。
+- Plugin Package：也称为插件，实现和封装包含Flutter与iOS/Android原生的交互的某种能力，例如调用原生系统接口。
+
+#### 现有的package
+
+[pub.dev](https://pub.dev)是Dart开发者发布共享package的平台以及远程仓库（很好记：“pub”指publication，“.dev”则是Google持有的为开发相关提供的顶级域名）。在上面我们可以看到其他开发者发布的上万个面向Dart或者Flutter开发的package，供所有开发者使用和评价。它们封装了一些提供特定功能的代码，包括完善的工具和UI组件等等。平台上很多like数很高的package都在业界内非常出名并且已经被应用于大量的项目中，例如状态管理工具[provider](https://pub.dev/packages/provider)、数据存储插件[shared_preference](https://pub.dev/packages/provider)、网络请求工具[http](https://pub.dev/packages/http)等等。
+
+#### 依赖Package
+
+在我们的Flutter项目中有一个`pubspec.yaml`文件（我理解为“publish specification”，即发布说明书），它是一个用YAML语言编写的包含一系列元数据的文件，用于指定项目的一些特定的发布信息以及项目的依赖项(dependencies)等。这里的依赖项就包括我们的项目所依赖的其他的package。
+
+如果要依赖一个pub.dev上的package，我们要做的就是把包的名字和版本声明在`pubspec.yaml`文件中的`dependencies`目录下，flutter sdk之后。实际上除了已发布的包外，我们也可以依赖git仓库或者某路径下现有的package。只要声明包名和git url或者本地路径即可。
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter    
+  provider: ^5.0.0
+  shared_preferences: 0.5.6+3
+  my_plugin1:
+    git:
+      url: git://github.com/flutter/my_plugin1.git
+  my_plugin2:
+    path: ../plugins/my_plugin2
+```
+
+需要注意的是，YAML的语法用缩进表示层级关系，相同层级的元素必须使用相同数量的缩进。
+
+另外，版本号的声明可以选择指定一个范围：上面例子中的`^5.0.0`表示的是5.0.0版本或以上，flutter会自动适配和当前我们使用的接口兼容的新版本。或者我们也可以使用`'>=5.0.0 <6.0.0'`这样的方式来指定，或使用`any`也可以自动适配最新版本。（不过使用`any`有造成依赖“冲突”的可能，因为包和包之间可能也会相互依赖，造成对一个包的多个依赖关系，如果存在无法兼容的不同版本就会产生冲突。）
+
+接下来运行`flutter pub get`命令来实际地获取这些我们依赖的package。flutter会自动生成一个`pubspec.lock`的文件，里面会包含详细的依赖信息，也会将具体的版本锁定下来。在git仓库或者pub.dev上的依赖的包会被缓存到本地，在mac中是位于用户目录下的`.pub-cache`文件夹中。
+
+接下来我们只需要在我们需要的地方`import`package中的特定文件，就可以直接使用这些包为我们提供的接口了。
+
+### 开发package
+
+有时候我们会想开发属于自己的package，包括dart package或plugin package。也许是有了一个通用工具或组件的点子，想要发布出去供其他开发者使用；也许仅仅是想将自己项目中的一个模块或者是一个需要与原生交互的功能独立出来。
+
+#### 创建package
+
+在终端运行以下命令可以创建package和plugin：
+
+``` 
+// 创建名为hello的dart package：
+$ flutter create --template=package hello
+
+// 创建名为hello的plugin package, org用反向域名表示所属组织，用于标识原生代码中的包：
+$ flutter create --org com.example --template=plugin hello
+```
+
+在Android Studio中也可以直接创建：
+
+![ss01.png](http://km.oa.com/files/photos/pictures/202104/1618838124_46_w1792_h994.png)
+
+#### package结构
+
+dart package结构比较简单，主体就是lib目录，我们只需要在里面添加我们的dart文件就好。而plugin由于涉及原生功能，结构和flutter project非常类似，包含单独的ios和android模块。另外，plugin还额外包含一个example项目，这是一个依赖这个plugin的flutter应用，我们通常需要在里面为我们package的功能写一个demo来向用户说明应该如何使用它，并且展示它的能力。
+
+在根目录下，除了和flutter应用中相同的文件之外，package模板还自带了LICENSE和CHANGELOG.md文件。pub.dev要求开发者在发布package时，必须要包括一个LICENSE文件来声明开源许可协议（官方推荐使用Dart的[BSD license](https://opensource.org/licenses/BSD-3-Clause)）。CHANGELOG.md则用于记录版本变更。发布后它会和README.md一样展示在package的主页上。
+
+#### 发布package
+
+需要注意的是，发布是永久性的，一旦发布，只能更新、无法撤回。
+
+> 1. 检查package是否符合要求：确保LICENSE文件正确，检查pubspec.yaml、README.md以及CHANGELOG.md文件的内容，大小符合要求。
+> 2. 在pub.dev创建publisher账号。
+> 3. 可以通过`dry-run`命令执行空运行，测试package的状态。
+> ```
+> flutter packages pub publish --dry-run
+> ```
+> 3. 执行发布命令。
+> ```
+> flutter packages pub publish
+> ```
+
+### Plugin与PlatformChannel
+
+和只需要用dart代码提供功能的package不同，plugin需要我们关注原生和flutter两个部分。为了实现原生平台代码和flutter平台代码的交互，flutter为我们提供了封装好的PlatformChannel“平台通道”功能。这些通道让我们可以方便地在平台之间通过**消息传递**来异步地**发送数据**或**调用接口**。在开发Plugin时和在项目中需要直接进行跨平台的交互时都需要依赖平台通道。
+
+在官方文档中有一个获取电池电量的Plugin示例：[官方文档：撰写双端平台代码（插件编写实现）](https://flutter.cn/docs/development/platform-integration/platform-channels)。
+
+## PlatformChannel与Plugin开发
+
+正如上面所说，平台通道的作用就是用传递消息的方式来进行flutter与原生平台间的交互。从使用的角度概括来说，就是在两侧都创建一个**具有相同标识的Channel实例**，就可以形成一个平台间的通道。这个过程涉及到Channel的三个实例属性的参与：
+
+- `name`：一个字符串，Channel的唯一标识符。两端的Channel实例要使用相同的name才能形成通道。
+- `codec`：编码解码器。将需要传递的消息在编码成二进制的形式以便于传输，或者将收到的消息解码成当前平台特定类型的值。传递数据的codec有基类`MessageCodec`，传递方法调用的codec有基类`MethodCodec`（不同的类型之后介绍Channel的时候再做详细的讨论）。
+- `messenger`：`BinaryMessenger`(抽象类)类型，它是实际执行平台间消息发送和接收的工具。这个属性在各类Channel中都有默认值，这个默认值是在ServiceBinding中的一个静态实例`defaultBinaryMessenger`，这个默认messenger的类型是实现了BinaryMessenger的一个私有类`_DefaultBinaryMessenger`。此外没有其他现有的实现，使用Channel时一般也不需要自己配置。
+
+### channel的种类
+
+有以下几种Channel类型：
+
+#### BasicMessageChanne
+
+BasicMessageChannel是“基本消息通道”，提供最基本的数据传输的功能。它的构造需要提供一个`name`，一个`MessageCodec`和一个可选的`binaryMessenger`。接口包括：
+
+```dart
+// 发送数据
+send(T message) -> Future<T>
+  
+// 注册接收另一平台数据的处理回调
+setMessageHandler(Future<T> Function(T message)? handler) -> void
+  
+// 测试用的模拟处理器，不会将数据发送到另一平台，而是拦截下来并提供模拟的反馈
+setMockMessageHandler(Future<T> Function(T message)? handler) -> void 
+```
+
+非常直白。那么它可以发送哪些数据呢？这就要看我们使用的codec编解码器了。
+
+##### MessageCodec
+
+抽象类**MessageCodec**定义了两个方法：`encodeMessage`和`decodeMessage`，来将数据在平台的类型和二进制数据类型`ByteData`之间转换用于发送。而它现有的实现也有不同的几种，决定了它可以编解码的数据的类型。我们在创建这个Channel时就要决定传入哪一种Codec。
+
+- **BinaryCodec**：对编码前就是ByteData类型的数据进行解编码。`ByteData`就是二进制数据类型，所以看它对`encodeMessage`和`decodeMessage`接口的实现会发现，它只是直接返回了参数而已，没有实际编解码。
+
+- **StringCodec**：将String编码成ByteData，将ByteData解码为String。
+- **JSONMessageCodec**：支持基本数据类型以及它们的List和Map类型。在ios端的解码使用`NSJSONSerialization`库，在安卓端使用`org.json`库。
+- **StandardMessageCodec**：顾名思义这是最“标准”的MessageCodec。除了基本数据类型和它们的List和Map类型外，还支持Uint8List，Int32List，Int64List，Float64List。但是在原生平台它们会被解码成对应的数据类型。具体可以参考官方文档中的这个表格：
+
+![ss02.png](http://km.oa.com/files/photos/pictures/202104/1618838167_31_w1712_h1012.png)
+
+在原生平台上的Channel也是同理。在iOS端，类型名前都会多加一个“Flutter”，例如`FlutterBasicMessageChannel`，以及`FlutterJSONMessageCodec`。其他Channel也同理。
+
+#### MethodChannel
+
+MethodChannel是“方法通道”，和传递各类型数据的消息通道不同，它传递的是方法调用。它的构造函数中`name`是必须的，`codec`和`messenger`都是可选的。它最主要的接口有：
+
+```Dart
+// 调用另一平台的方法，接受唯一方法名（在另一平台的setMethodCallHandler中指定）和调用的参数列表
+invokeMethod<T>(String method, [dynamic arguments]) -> Future<T?>
+
+// 注册接受来自另一平台的方法调用的处理回调
+setMethodCallHandler(Future<dynamic> Function(MethodCall call)? handler) -> void
+```
+
+`setMethodCallHandler`方法的参数是一个handler回调函数，这个函数的参数是一个`MethodCall`实例。显然，这个`MethodCall`类型指的就是从另一个平台发送过来的方法调用，它包含的内容和我们使用`invokeMethod`所发送出去的内容相同，实际上就是一个方法名字符串`name`和一个参数列表`arguments`。这样在这个回调中，就可以根据这些信息来替另一平台调用我们的方法，再返回其返回值，完成跨平台调用。
+
+除此之外它的接口还包括：分别返回map类型和list类型的另两种实现invokeMethod、测试用的注册模拟handler（`setMockMethodCallHandler`）、检查注册的handler（`checkMethodCallHandler`）等。需要时可以查看[MethodChannel文档](https://api.flutter.dev/flutter/services/MethodChannel-class.html)。
+
+以官方文档中的读取电池电量的demo为例，其中关键的代码如下：
+
+**iOS（objective-c）：**
+
+打开`AppDelegate.m`，在`application didFinishLaunchingWithOptions`方法内创建`FlutterMethodChannel`（这是最简单直接的注册Channel的方式），并且为它注册handler。
+
+```objc
+@implementation AppDelegate
+- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
+  ... ...
+  // 创建一个MethodChannel，传入用于标识的唯一name
+  FlutterViewController* controller = (FlutterViewController*)self.window.rootViewController;
+  FlutterMethodChannel* batteryChannel = [FlutterMethodChannel methodChannelWithName:@"channel_demo/battery" binaryMessenger:controller];
+  // 调用setMethodCallHandler注册处理调用的回调，第二个参数是会被发回的Result实例
+  [batteryChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    if ([@"getBatteryLevel" isEqualToString:call.method]) {
+      int batteryLevel = [self getBatteryLevel];
+      if (batteryLevel == -1) {
+        result([FlutterError errorWithCode:@"UNAVAILABLE" message:@"Battery info unavailable" details:nil]);
+      } else {
+        result(@(batteryLevel));
+      }
+    } else {
+      result(FlutterMethodNotImplemented);
+    }
+  }];
+  ... ...
+}
+
+// 实际完成功能的方法
+- (int)getBatteryLevel {
+  UIDevice* device = UIDevice.currentDevice;
+  device.batteryMonitoringEnabled = YES;
+  if (device.batteryState == UIDeviceBatteryStateUnknown) {
+    return -1;
+  } else {
+    return (int)(device.batteryLevel * 100);
+  }
+}
+```
+
+**Flutter：**
+
+```dart
+// 创建MethodChannel，传入和原生平台相同用于标识的唯一name
+final channel = const MethodChannel('channel_demo/battery');
+... ...
+try {
+  // 调用invokeMethod，指定特定的的方法名，等待结果
+  final int result = await channel.invokeMethod('getBatteryLevel');
+  batteryLevel = 'Battery level at $result % .';
+} on PlatformException catch (e) {
+  batteryLevel = "Failed to get battery level: '${e.message}'.";
+}
+```
+
+可以看出，使用MethodChannel进行跨平台方法调用的操作的本质其实依然是传递消息，只是发送的消息内容是一个MethodCall，包含的数据是特定的函数名和参数。
+
+##### MethodCodec
+
+类似MessageCodec，负责MethodChannel的调用消息解编码的是另一种codec，MethodCodec类。首先它最基本的对“调用”的编解码接口`encodeMethodCall`、`decodeMethodCall`，是在MethodCall和二进制数据ByteData之间进行转换。除此之外，他还有三个接口：`decodeEnvelope`、`encodeSuccessEnvelope`、`encodeErrorEnvelope`：
+
+```dart
+decodeEnvelope(ByteData envelope) -> dynamic
+
+encodeSuccessEnvelope(dynamic result) -> ByteData
+
+encodeErrorEnvelope({ required String code, String? message, dynamic details}) -> ByteData
+```
+
+由于方法调用有时需要返回一个成功或失败的信息以及某个数据类型的结果，所以这里的Envelope(信封)指的就是任意用于存放调用结果的对象，而这些方法就是对它进行编解码。编码接口包括调用成功和失败两种，在失败的情况下我们需要返回一个特定的error code，也可以包含一个以自然语言进行反馈的message和包含其他详细信息的实例。
+
+MethodCodec也有两个实现类：
+
+- **StandardMethodCodec**：对于方法调用的参数和返回的结果的编解码，它支持StandardMessageCodec所支持的所有类型。
+
+- **JSONMethodCodec**：和JSONMessageCodec一致。
+
+#### OptionalMethodChannel
+
+OptionalMethodChannel是MethodChannel的子类，是一个特殊的MethodChannel。它和MethodChannel唯一的区别在于当它改变了一个私有函数的参数，使得当没有在另一平台找到对应的Channel时，它会直接返回`null`。而MethodChannel则会抛出`MissingPluginException`。
+
+```dart
+class MethodChannel {  
+  Future<T?> invokeMethod<T>(String method, [ dynamic arguments ]) {
+    // MethodChannel将missingOK参数设为false
+    return _invokeMethod<T>(method, missingOk: false, arguments: arguments);
+  }
+  
+  Future<T?> _invokeMethod<T>(String method, { required bool missingOk, dynamic arguments }) async {
+    assert(method != null);
+    final ByteData? result = await binaryMessenger.send(name, codec.encodeMethodCall(MethodCall(method, arguments)),);
+    if (result == null) {
+      // 若missingOK为true，则直接返回，反之抛出异常
+      if (missingOk) {
+        return null;
+      }
+      throw MissingPluginException('No implementation found for method $method on channel $name');
+    }
+    return codec.decodeEnvelope(result) as T;
+  }
+  ... ...
+}
+
+class OptionalMethodChannel extends MethodChannel {
+  ... ... 
+  @override
+  Future<T?> invokeMethod<T>(String method, [ dynamic arguments ]) async {
+    // OptionalMethodChannel调用_invokeMethod时missingOK参数设为true
+    return super._invokeMethod<T>(method, missingOk: true, arguments: arguments);
+  }
+  ... ...
+}
+```
+
+#### EventChannel
+
+EventChannel是一个进行流式通信的通道。简单的说就是我们构建了一个Stream来接受一个Channel中的事件和error。本质上，EventChannel就是基于MethodChannel实现的，只是用流的方式来接收消息，并且可以用监听流的方式获取来自另一平台的数据。EventChannel默认使用StandardMethodCodec作为编解码器。
+
+其中唯一的方法接口：
+
+```dart
+receiveBroadcastStream([ dynamic arguments ]) -> Stream<dynamic>
+```
+
+这个方法返回一个广播流。当有监听者订阅了这个流时，流会被激活，将来自原生平台的事件和error发送给监听者。当监听者的数量变为0，这个流也会失效。
+
+可以看一下这个方法的源码，其实就是为一个MethodChannel绑定了一个流作为消息接收器：
+
+```dart
+  Stream<dynamic> receiveBroadcastStream([ dynamic arguments ]) {
+    // 创建一个同名的MethodChannel
+    final MethodChannel methodChannel = MethodChannel(name, codec);
+    late StreamController<dynamic> controller;
+    // 创建一个Flutter本地的流提供给监听者
+    controller = StreamController<dynamic>.broadcast(onListen: () async {
+      // 被监听时，向messenger设置一个收到跨平台消息时的回调，将消息解码放入流中
+      binaryMessenger.setMessageHandler(name, (ByteData? reply) async {
+        if (reply == null) {
+          controller.close();
+        } else {
+          try {
+            controller.add(codec.decodeEnvelope(reply));
+          } on PlatformException catch (e) {
+            controller.addError(e);
+          }
+        }
+        return null;
+      });
+      // 再向平台另一侧发送“开始订阅”的消息
+      try {
+        await methodChannel.invokeMethod<void>('listen', arguments);
+      } catch (exception, stack) {
+        FlutterError.reportError(FlutterErrorDetails(
+          ... ...
+        ));
+      }
+    // 被取消监听时同理
+    }, onCancel: () async {
+      binaryMessenger.setMessageHandler(name, null);
+      try {
+        await methodChannel.invokeMethod<void>('cancel', arguments);
+      } catch (exception, stack) {
+        FlutterError.reportError(FlutterErrorDetails(
+          ... ...
+        ));
+      }
+    });
+    return controller.stream;
+  }
+```
+
+需要注意的是，因为在通信的另一端只存在一个Channel，所以如果我们多次注册同一个EventChannel并且listen，也只有最后一次是有效的并且可以接受到消息。
+
+### Plugin的开发和使用
+
+在知道了PlatformChannel的用法之后，需要了解开发一个完整的Plugin还需要做些什么。在上面MethodChannel的例子中，在原生ios端，我们是直接在AppDelegate的`didFinishLaunchingWithOptions`中注册Channel的，这是对于一般直接简单地使用一个PlatformChannel的情况下的做法。但是在封装一个Plugin时则会有所区别。
+
+正如上文所说，当我们创建一个Plugin项目时，在目录中会包含一个ios目录和android目录。在ios目录下的Classes文件夹中可以看到与Plugin同名的类文件，例如`BatteryLevelPlugin.h`以及`BatteryLevelPlugin.m`。
+
+在`.h`文件中声明实现`FlutterPlugin`协议：
+
+```objc
+// BatteryLevelPlugin.h
+#import <Flutter/Flutter.h>
+
+@interface BatteryLevelPlugin : NSObject<FlutterPlugin>
+@end
+```
+
+在`.m`文件中，则需要包含Plugin的注册方法，同时指定收到消息或调用的处理器。例如：
+
+```objc
+@implementation FlutterPlugin1Plugin
+// 必要的Plugin注册方法，在里面初始化Plugin，创建MethodChannel以及定义handler
++ (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
+  // 创建MethodChannel
+  FlutterMethodChannel *channel = [FlutterMethodChannel methodChannelWithName:@"channel_demo/battery" binaryMessenger:[registrar messenger]];
+  // 可以选择将调用的处理交给代理
+  BatteryLevelPlugin *instance = [[BatteryLevelPlugin alloc] init];
+  [registrar addMethodCallDelegate:instance channel:channel];
+  // 也可以选择直接注册代码块处理调用
+  [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    if ([@"invokeMethod1" isEqualToString:call.method]) {
+        ... ...
+  }];
+  [registrar addApplicationDelegate:instance];
+}
+
+// 代理的处理方法，根据来自flutter的调用的方法名call.method，作出不同的处理，将结果返回flutter
+- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result {
+  if ([@"invokeMethod1" isEqualToString:call.method]) {
+    [self method1:(FlutterResult)result];
+  } else if ([@"invokeMethod2" isEqualToString:call.method]) {
+    [self method2:call.arguments[@"arg0"] result:(FlutterResult)result];
+      ... ...
+  } else {
+      result(FlutterMethodNotImplemented);
+  }
+}
+- (void)method1:(FlutterResult)result {
+  ... ...
+  // 返回结果
+  result(... ...);
+}
+```
+
+这样一来，我们在项目中使用这个Plugin的时候，就可以通过调用这个方法来初始化和注册我们的Channel了。由于我们项目中通常包含很多Plugin，通常我们在`registerWithRegistry.m`文件中统一完成这个过程：
+
+```objc
+#if __has_include(<battery_level/BatteryLevelPlugin.h>)
+#import <battery_level/BatteryLevelPlugin.h>
+#else
+@import battery_level;
+#endif
+
+@implementation GeneratedPluginRegistrant
+  
++ (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
+  [BatteryLevelPlugin registerWithRegistrar:[registry registrarForPlugin:@"BatteryLevelPlugin"]];
+    ... ...
+  // 各种plugin都在这里注册
+}
+```
+
+然后再在AppDelegate的`didFinishLaunchingWithOptions`统一注册：
+
+```objc
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  ... ...
+  // 传入FlutterEngine作为registrar
+    [GeneratedPluginRegistrant registerWithRegistry:self.flutterEngine];
+  ... ... 
+  // 在这里直接注册Plugin也可以
+  [BatteryLevelPlugin registerWithRegistrar:[self.flutterEngine registrarForPlugin:@"BatteryLevelPlugin"]];
+}
+```
+
+这样就完成了。在Flutter端较为简单，就如上面MethodChannel的例子中所展示的那样使用Channel的接口发送消息就可以完成跨平台的调用。
