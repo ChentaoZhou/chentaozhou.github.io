@@ -6,7 +6,7 @@ date: 2018-03-02 13:35:20 +0200
 tags:
 categories: guide
 ---
-A paragraph looks like this — dolor amet cray stumptown fingerstache neutra food truck seitan poke cardigan waistcoat VHS snackwave celiac hella. Godard seitan shoreditch flexitarian next level trust fund man braid vegan listicle keytar bitters. Disrupt cray fashion axe unicorn lomo shaman poke glossier keffiyeh snackwave austin tattooed seitan hexagon lo-fi. Lumbersexual irony vaporware, butcher shaman church-key iceland.
+A paragraph looks like this — 现在的手机包括iPhone在内，都有不同的屏幕尺寸，同时还存在屏幕可以旋转的情况，所以在实现UI时我们一般不能去像AbsoluteLayout那样写死组件的位置，而是需要更灵活、适应性强的布局工具，来让我们的界面可以和不同大小和比例的屏幕适配。获取屏幕的尺寸再通过计算来设置绝对布局的数值也是一种方法，但是iOS为我们提供了更好的自动布局方式来实现对组件相对位置的控制。
 
 ***
 
