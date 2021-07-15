@@ -1,0 +1,557 @@
+---
+layout: post
+title: Objective-C学习笔记 基本语法和概念
+image: 3.jpg
+date: 2020-11-24 20:01:00 +0200
+tags: [iOS]
+categories:iOS
+---
+OC像是**C语言**和**面向对象编程（OOP）** 的结合。如果对两者都有所了解，应该也很容易理解它的逻辑，只需要熟悉一些它特有的语法和符号用法等等即可。
+
+推荐一个视频教程：[Objective C Tutorial - Derek Banas](https://www.youtube.com/watch?v=5esQqZIJ83g)
+
+这个视频很适合第一次接触Objective-C（以下简称OC）入门的同学，它的前半小时是在介绍C语言，接触过C语言的同学可以直接跳到34:53开始看。视频里非常快速的介绍了OC语言的一些基本操作、对字符串和数组的操作、构建一个类、Category和Protocol的基本用法等等。**它不会深入的解释一个概念或原理，只是演示了一遍基本操作，同学们可以跟着视频快速的敲一遍这些代码，就可以迅速的对这个语言的用法熟悉起来。** 
+如果想要理解的深入，可以配合书籍或者自己搜索一些相关的概念来完善。这篇笔记中也基于视频内容增加了一些从其他途径收集到的解释以及自己的理解。
+
+## 一、常用操作
+
+### 1. HelloWorld
+
+```objectivec
+int main(int argc, const char * argv[]) {
+  @autoreleasepool {
+	NSLog(@"Hello, World!");
+	printf("Hello,World!\n");
+  }
+  return 0; 
+}
+```
+
+#### 主函数
+
+OC中的`main`函数默认返回值类型为`int`，参数列表中`argc`表示输入的参数个数，`argv`则是一个常量数组，里面存着所有的参数。
+
+- `@autoreleasepool`：
+
+在Xcode中创建一个新项目，就会看到`main`函数的函数体被一个标注着`@autoreleasepool`的代码块包裹。它的功能是自动地对内存进行释放，以优化项目的内存占用。（内存管理这方面的知识深入学习的时候再去整理，Mark一个文章: [iOS-MRC与ARC区别以及五大内存区](https://www.jianshu.com/p/5eac83471b23)）
+
+### 2. 字符串
+
+在OC中使用字符串一般不是直接使用C语言中的字符串，而是将字符串用`NSString`对象包裹（不用太在意这个NS，只是一个为了区分的前缀）。通过在一个双引号包裹的字符串前增加一个`@`符号，就可以方便地创建出一个`NSString`。
+
+例如上面例子中的：
+
+````objectivec
+NSLog(@"Hello, World!");
+````
+
+其中`NSLog`需要获得一个`NSString`，那么就直接在括号内放一个字符串，再在前面加一个`@`即可。
+
+#### 输出
+
+`NSLog`类似`printf`，可以在控制台输出一个字符串，也就是`NSString`。其实在OC中也可以使用C语言的代码，所以也可以用`printf`来输出内容，它们二者的区别包括：
+
+1. `NSLog`会自动换行，并且在前面加上工程名、时间和进程信息。而`printf`不会添加其他内容，并且需要用换行符`\n`换行。例如上面的HelloWorld，输出结果如下：
+
+   ```
+   2020-11-24 14:13:27.603136+0800 ObjCTut[23512:1010020] Hello, World!
+   Hello,World!
+   Program ended with exit code: 0
+   ```
+
+2. `NSLog`需要一个`NSString`对象，但`printf`需要的是一个`const char*`指针。
+
+3. NSLog可以使用`%@`去打印一个对象类型，而`printf`不可以。
+
+   类似Java中的`String.formatting`的功能，我们知道在C语言中，`printf`是可以直接进行字符串的格式化输出的，例如：
+
+   ```objectivec
+   int num = 5;
+   printf("This is a number : %d\n", num);
+   // 输出：This is a number : 5
+   ```
+
+   我们知道`%d`表示的是一个整型数。那除了常用的`%d`、`%s`、`%f`等等之外，还有一个比较特殊的`%@`，这个指的是对象类型。刚才提到`NSString`不是一个真正意义上的字符串，而是一个包装了字符串的**对象**，所以如果要将它直接打印出来，就需要使用`NSLog`了。
+
+#### 常用操作
+
+**指针**
+
+对C语言比较了解的同学应该熟悉指针的概念。Java中没有指针，对象使用的是引用（reference）。但是两者其实是类似的，引用是一个内存中的地址，指针指向的也是内存中的地址。
+
+```objectivec
+NSString *nothing = nil; 
+NSLog(@"Location of nil : %p ", nothing);
+// 输出： Location of nil : 0x0 
+// 这就是nil的“位置”，所有指向nil的对象都会指向这里
+```
+
+- 这上面的`%p`指的是指针，直接输出指针会输出内存中的位置。如果把这里改成代表对象的`%@`，得到的结果会是`(null)`。
+
+**调用NSString的方法**
+
+OC中**方法调用**的语法：`[对象名 方法名]`。不同于很多语言使用的点`.`，它使用中括号和空格。它在进行调用时的实际行为也和很多语言不同：
+
+> ```
+> [car fly];
+> ```
+>
+> 典型的解读是"调用car类别的fly方法"。若car类别里头没有定义fly方法，那编译肯定不会通过。但是Objective-C里，我们应当解读为"发提交一个fly的消息给car对象"，fly是消息，而car是消息的接收者。car收到消息后会决定如何回应这个消息，若car类别内定义有fly方法就运行方法内之代码，若car内不存在fly方法，则程序依旧可以通过编译，运行期则抛出异常。
+>
+> （摘自[菜鸟教程](https://www.runoob.com/w3cnote/objective-c-tutorial.html)）
+
+NSString的常用方法包括：
+
+- **获取长度**：`length`方法：返回字符串长度，返回值是一个`unsigned long`。下面的例子把它转型成了整数。
+
+  ```objectivec
+  NSString *quote = @"Java is the best programming language";
+  NSLog(@"Size of String : %d", (int)[quote length]);
+  // Size of String : 37
+  ```
+
+- **获取某位置的字符**：`characterAtIndex`方法返回字符串中某个索引位置的字符，参数为一个整数索引。
+
+  > 调用时，参数用冒号衔接在方法名后。
+
+  ```objectivec
+  NSString *quote = @"Java is the best programming language";
+  NSLog(@"Character at 5 : %c", [quote characterAtIndex:5]); 
+  // Character at 5 : i
+  ```
+
+- **格式化**：`stringWithFormat`方法进行动态地格式化，返回一个`NSString`。
+
+  ```objectivec
+  char *name = "Lyris";
+  NSString *myName = [NSString stringWithFormat:@"My name is %s", name];
+  ```
+
+- **比较是否相等**：`isEqualToString`
+
+  ```objectivec
+  NSString *string1 = @"abc";
+  NSSTring *String2 = @"cba";
+  BOOL isStringEqual = [string1 isEqualToString: string2];
+  ```
+
+- **转换类型**：`UTF8String`方法将`NSString`转回一个常规字符串，即返回`const char*`类型，使其可以被认作`%s`类型，也可以被`printf`输出。
+
+  ```objectivec
+  NSLog(@"to UTF8String : %s", [myName UTF8String]);
+  printf("to UTF8String : %s", [myName UTF8String]);
+  ```
+
+- **连接字符串**：`stringByAppendingString`获取另一个字符串为参数，将其与调用者连接并返回。
+
+  ```objectivec
+  NSString *wholeString = [string1 stringByAppendingString:string2];
+  ```
+
+- **大写转换**：`uppercaseString`返回字符串的全大写版本（小写转换：`lowercaseString`）。
+
+> 方法也可以嵌套的调用，例如：
+>
+> ```objectivec
+> NSString *myName = @"Lyris";
+> const char *myNameString = [[myName uppercaseString] UTF8String];
+> printf("%s\n", myNameString); // LYRIS
+> ```
+
+- **在字符串中查找**：`rangeOfString`查找一个子串是否存在在原字符串中、位置在哪。
+
+  ```objectivec
+  NSString *quote = @"Java is the best programming language";
+  NSRange searchResult = [quote rangeOfString:@"Java"];
+  if(searchResult.location == NSNotFound) {
+  	NSLog(@"String not found");
+  } else {
+  	printf("Java is at index %lu and is %lu long\n", searchResult.location, searchResult.length);
+  }
+  // Java is at index 0 and is 4 long
+  ```
+
+- **范围替换**：`stringByReplacingCharactersInRange`有两个参数，第一个是表示范围的`NSRange`，第二个要拿去替换的新字符串。方法返回替换后的新字符串。
+
+  ```objectivec
+  NSString *quote = @"Java is the best programming language";
+  NSRange range = NSMakeRange(0, 4); // 范围
+  const char *newQuote = [[quote stringByReplacingCharactersInRange:range withString:@"Swift"] UTF8String]; // 替换
+  printf("%s\n", newQuote);
+  // Swift is the best programming language
+  ```
+
+> **多个参数的函数**：
+>
+> Object-c的一个方法可以包含多个参数，但是和其他语言不同的是，第一个参数可以没有名字（标签），后面的参数必须要有名字（标签），在定义和调用时都要表明。
+>
+> 例如上面的`stringByReplacingCharactersInRange`，第二个参数的名字叫`withString`。
+
+#### **可变字符串**
+
+和Java中的`String`一样，`NSString`是一个不可变的类型，创建后原对象就不能被修改了。
+如果尝试着直接创建两个内容相同的字符串对象，再将指针地址输出，会发现它们的地址是一样的：
+```objectivec
+NSString *s1 = @"Hello";
+NSString *s2 = @"Hello";
+printf("pointer s1: %p\n", s1);
+printf("pointer s2: %p\n", s2);
+// pointer s1: 0x1000040c0
+// pointer s2: 0x1000040c0
+```
+可以看出，类似Java中的字符串常量池，不可变的字符串其实是作为常量存在的，不同的指针（或者说Java中的引用）有可能会指向一个相同的位置，因此这个位置的值必须是不可变的，否则改变一个对象就会影响到其他对象。
+但我们也是有办法使用可变的字符串的，类似Java中的`StringBuilder`、`StringBuffer`，在OC中则可以使用`NSMutableString`。
+
+```objectivec
+NSMutableString *groceryList = [NSMutableString stringWithCapacity : 50];
+[groceryList appendFormat: @"%s", "Potato, Banana, Pasta"];
+NSLog(@"groceryList : %@", groceryList);
+// Potato, Banana, Pasta
+
+[groceryList deleteCharactersInRange : NSMakeRange(0, 8)]; // 删除部分
+NSLog(@"groceryList : %@", groceryList);
+// Banana, Pasta
+
+[groceryList insertString:@", Apple" atIndex:13]; // 插入
+NSLog(@"groceryList : %@", groceryList);
+// Banana, Pasta, Apple
+
+[groceryList replaceCharactersInRange:NSMakeRange(15, 5) withString : @"orange"]; // 替换
+NSLog(@"groceryList : %@", groceryList);
+// Banana, Pasta, orange
+```
+
+对可变字符串进行操作时不需要获取返回值，而是会直接对原对象进行修改。
+
+### 3. 数组
+
+和Java中不同，OC中的数组不能存放基本数据类型，智能存放类的实例，即对象。因此如果要放入基本数据类型，则需要用相应的类型进行包装，例如`NSInteger`。这很类似Java中的拆装箱的过程。
+
+#### 常用操作
+
+- **初始化**
+
+  ```objectivec
+  NSArray *arr0 = @[@"one", @"two"];
+  NSArray *arr1 = [NSArray arrayWithObject:@"one"];
+  NSArray *arr2 = [NSArray arrayWithObjects:@"one",@"two",nil];
+  NSArray *arr3 = [NSArray arrayWithArray:arr2];
+  NSArray *arr4 = [[NSArray alloc] initWithArray:arr2];
+  ```
+
+- **获取元素**
+
+  - 获取某个位置的元素的方式和其他语言一致
+
+    ```objectivec
+    NSLog(@"First : %@", arr[0]);
+    ```
+
+  - 可以通过`%@`直接打印所有元素
+
+    ```objectivec
+    NSLog(@"All items : %@", arr0);
+    //All items : (
+    //    one,
+    //    two
+    //)*
+    ```
+
+- **是否包含某元素**：`containsObject`
+
+  ```objectivec
+  BOOL containsItem = [arr0 containsObject: @"one"];
+  ```
+
+- **元素个数**：`count`
+
+  ```objectivec
+  NSLog(@"Total : %lu", [arr0 count]); // Total : 2
+  ```
+
+- **获取元素的索引**：`indexOfObject`
+
+  ```objectivec
+  NSLog(@"Index of Pencils is at %lu", (unsigned long)[officeSupplies indexOfObject:@"Pencils"]);
+  ```
+
+#### 可变的数组
+
+和字符串一样，在OC中数组也分不可变数组`NSArray`和可变数组`NSMutableArray`。可变数组具有很多对数组成员进行增删的方法：
+
+- **初始化**：`arrayWithCapacity`可以初始化数组为一个特定的长度，单长度是可变的。
+
+  ```objectivec
+  NSMutableArray *heroes = [NSMutableArray arrayWithCapacity: 5];
+  ```
+
+- **添加元素**：`addObject`
+
+  ```objectivec
+  [heroes addObject:@"Ironman"];
+  [heroes addObject:@"Captain America"];
+  [heroes addObject:@"Hulk"];
+  ```
+
+- **插入元素**：`insertObject`
+
+  ```objectivec
+  [heroes insertObject:@"Black Widow" atIndex:2];
+  ```
+
+- **移除元素**：`removeObject`/`removeObjectAtIndex`/`removeObjectIdenticalTo`
+
+  ```objectivec
+  [heroes removeObject:@"Black Widow"]; // 移除特定元素
+  [heroes removeObjectAtIndex:0]; // 移除某个位置上的元素
+  [heroes removeObjectIdenticalTo:@"Captain America" inRange:NSMakeRange(0, 1)]; // 移除某个范围内的特定元素
+  ```
+
+### 4. 匿名函数
+
+在OC中我们可以定义一个没有名字（identifier）的函数，然后把函数内容存储在一个变量中，后续就可以通过这个变量来直接使用这个函数。
+
+```objectivec
+float(^getArea) (float height, float width); 
+getArea = ^float(float width, float height) {
+	return width * height;
+}; //注意这个分号
+float ans = getArea(3, 50);
+NSLog(@"Area of 3 width and 50 height: %.1f", ans);
+```
+
+### 5. 枚举
+
+枚举可以理解成自己定义一个值的可能性有限的类型，为此我们要把所有可能的值都“枚举”出来。在OC中我们可以随时定义一个枚举类型：
+
+```objectivec
+enum Ratings {
+	Poor = 1, Ok = 2, Great = 5
+};
+enum Ratings matrixRating = Great;
+NSLog(@"Matrix %u", matrixRating);
+```
+
+
+
+## 二、类和对象
+
+### 1. 类和对象
+
+首先，在OC中，创建一个类会产生两个文件：
+- `.h`文件：头文件，里面声明了类、实例变量（属性）、常量和方法（函数）。
+- `.m`文件：源代码文件，包含方法的具体实现。
+
+教程中的一个简单的例子：
+#### `.h`文件
+
+```objectivec
+#import <Foundation/Foundation.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface Animal : NSObject //父类是NSObject
+
+// @property (readonly) NSString *name;
+@property NSString *name;
+@property float weight;
+
+- (instancetype) initWithName:(NSString*) defaultName;
+
+- (void) printInfo;
+
+- (NSString *) talkToMe: (NSString *) myName;
+
+- (int) getSum: (int) num1
+    nextNumber: (int) num2; // 多个参数的方法
+
+@end
+
+NS_ASSUME_NONNULL_END
+
+```
+- 属性声明`@property`
+  - 在OC中，声明了一个属性，那么这个属性就自动拥有了`getter`和`setter`，不需要自己定义。
+  - 并且，可以直接用**点**`.`来调用。假设这个类有一个实例叫`dog`，那么`dog.name`就相当于调用了`getter`。
+  - 但是，在后面用括号可以给它标注一些其他的关键词。例如`(readonly)`表示这个属性将使该属性没有`setter`。`(atomic)`会使get和set变成原子操作，等等。
+
+- 方法
+  - `+`/`-`：减号代表实例方法，加号代表类方法。
+  - 语法：`- (返回值) 方法名: (参数类型) 参数名`
+    上面说过，多个参数的情况下除了第一个参数外，其他都要有额外的标签：
+    ```objc
+    - (返回值) 方法名: (参数类型) 变量名
+      		第二个参数标签: (参数类型) 变量名
+          第三个参数标签: (参数类型) 变量名;
+    ```
+
+#### `.m`文件
+```objectivec
+#import "Animal.h"
+
+@implementation Animal
+
+- (instancetype) init
+{
+    self = [super init];
+    if (self) {
+        self.name = @"No Name";
+    }
+    return self;
+} // self:当前实例（即this）
+
+- (instancetype) initWithName:(NSString *)defaultName
+{
+    self = [super init];
+    if (self) {
+        self.name = defaultName;
+    }
+    return self;
+}
+
+- (void) printInfo {
+    NSLog(@"Info: This is an Animal.");
+}
+
+- (int) getSum: (int)num1 nextNumber:(int)num2 {
+    return num1 + num2;
+}
+
+- (NSString *) talkToMe:(NSString *)myName {
+    NSString *response = [NSString stringWithFormat:@"Hello %@", myName];
+    return response;
+}
+
+@end
+```
+- `.m`文件中只需要为每个`.h`中的方法提供实现即可。
+- `.m`文件需要`import`导入`.h`文件。
+- **构造器**：默认的构造器`init`是没有参数的，可以额外写别的方法来初始化对象。返回值设置为`instancetype`代表返回当前构造的对象。和Java一样，构造器内要调用父类构造器，但是OC中调用后要手动获取构造出的对象`self`，进行初始化后再返回。
+- 创建对象
+  ```objectivec
+  Animal *dog = [[Animal alloc] init]; // alloc: 分配空间
+  // 这是调用默认构造器，从类的代码可以知道这样构造的Animal的name属性为“No Name”
+  Animal *cat = [[Animal alloc] initWithName:@"Jerry"];
+  // 这是调用我们自己写的有参数的构造器
+  ```
+- 调用方法
+  ```objectivec
+  [dog setName:@"Tom"]; // 调用自动存在的setter方法
+  NSLog(@"dog name: %@", dog.name);	// 本质是调用getter方法
+  
+  NSLog(@"3 + 5 = %d", [dog getSum:3 nextNumber:5]);
+  // 调用getSum方法
+  // 输出“ 3 + 5 = 8
+  ```
+
+### 3. 继承
+
+继承是面向对象编程的一个重要特点，了解Java的同学应该都对它非常熟悉了。从上面的代码可以看到，`Animal`类是`NSObject`的子类。我们也可以再写其他的类，让它继承`Animal`类。
+
+比如，这是`Animal`的一个子类的`.h`文件：
+
+```objc
+// Koala.h
+#import "Animal.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface Koala : Animal //注意这里
+
+- (NSString *) talkToMe:(NSString *)myName;
+- (void) climbTree;
+
+@end
+
+NS_ASSUME_NONNULL_END
+```
+
+- 需要在其中`import`父类的`.h`文件。
+- 语法：`@interface 类名 : 父类`
+- 基本上所有的类都继承自NSObject（基类）。
+- 和Java的继承关系类似，子类继承了父类以及父类的父类中所有的成员变量和方法。在子类里面可以声明新的属性，新的方法，也可以声明父类有的方法，表示子类会重写父类的方法。
+
+### 4. Category
+
+Category是Objective-C 2.0之后添加的语言特性，学习其他语言的同学可能没有接触过这个概念。
+
+它的作用是**为已经存在的类添加方法**，但又不像子类那样产生新的类型和继承关系。我们可以利用它将类的实现**分开写在不同的文件里**，以避免一些文件太长太大的问题，同时也可以更好的适应多人协作的场景。
+
+但是要注意：
+- 不同于继承，Category不能为类添加属性（实例变量）。
+- 如果新添加的方法和原有的类中的方法相同，原有方法会被覆盖。
+
+在创建一个Category文件时，需要选择基于某个现有的类来创建。例如，为`Animal`类创建一个名为`Fur`的Category，则文件名为`Animal+Fur.h`以及`Animal+Fur.m`。
+
+```objectivec
+// Animal+Fur.h
+#import "Animal.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface Animal (Fur) // 注意这里的括号
+
+// 要添加的方法...
+
+@end
+
+NS_ASSUME_NONNULL_END
+  
+// .m文件类似，其余规则和类一致
+```
+### 5. Extention
+这个概念在视频中没有提到，但是其实应用的也非常广泛，这里参考一篇文章中的解释：
+> Extension(扩展/延展):
+> 匿名的特殊Category。类有时需要一些只为自己所见、所用的私有方法，这种私有方法可以通过延展（Extension）的方式来声明，定义的方法在类本身的@implementation代码区域中进行实现。
+>
+> 和Category相比：
+> - 在类别(Category)中只能添加方法，方法都是**公有**的；在类扩展(Extension)中，既可以添加方法,也可以添加**实例变量**，但是添加的内容都是类**私有**的,只能在类的内部访问。
+> - Extension声明的方法必须实现。
+> - 因为具体实现在类本身的文件中，所以Extension只有.h文件。
+>
+> 参考文章：[Category、Protocol、Extension文件区别](https://www.jianshu.com/p/c301e196437c)
+### 6. Protocol
+OC中的Protocol类似Swift中的Protocol，也类似Java中的Interface接口。
+简单的说，它不是对某个类的扩展，而是独立地定义一种“能力”。Protocol中会定义一些方法，但是不需要提供具体的实现，其他类去实现这个Protocol的时候，相当于拥有了这种“能力”，但也必须要为这些方法提供实现。
+因为不需要自己实现，所以Protocol也只需要一个`.h`文件
+举一个学习Java时最常看到的例子：
+```objectivec
+#import <Foundation/Foundation.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@protocol Flyable <NSObject>
+
+- (void) fly;
+
+@end
+
+NS_ASSUME_NONNULL_END
+```
+如果认为一个类型具有“飞”的能力，就可以实现这个接口，同时这个类必须要告诉我们它“怎么飞”，也就是实现其中定义的`fly`方法。
+实现接口的语法：
+- 在`.h`文件中
+  - 要导入Protocol：`#import "Flyable.h" `
+  - 用尖括号声明在父类后面：`@interface Bird : Animal <BeautyContest> `
+- 在`.m`文件中
+  - 实现Protocol中的方法
+## 面向对象编程
+学过一种面向对象编程（OOP）语言的同学应该比较了解，面向对象编程有一些特有的特征和编程原则。OC作为一种OOP的语言，同样也适用这些特征和原则。
+
+特征：
+- 抽象
+- 封装
+- 继承
+- 多态
+
+“六原则一法则”：
+- 单一指责原则
+- 开闭原则
+- 里氏替换原则
+- 依赖倒转原则
+- 合成复用原则
+- 接口隔离原则
+- 迪米特法则
+
+这些概念在网上的介绍非常多，这里就不多做解释了。如果刚接触面向对象编程的话，一定要去好好理解一下这些概念的含义，并且在实际的编程中去感受。我个人认为面向对象的逻辑非常巧妙有趣，而且可以非常形象的适配各种场景，非常易于理解和使用。这些原则更是使得代码可维护性高、复用性高、内聚高耦合低、易于测试和分工。希望大家都能体会到面向对象编程特有的魅力！
+
