@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="440" height="440" viewBox="0 0 440 440">
+    <defs>
+        <filter id="nrooc6lm8a" width="115%" height="112.9%" x="-7.5%" y="-6.5%" filterUnits="objectBoundingBox">
+            <feOffset in="SourceAlpha" result="shadowOffsetOuter1"/>
+            <feGaussianBlur in="shadowOffsetOuter1" result="shadowBlurOuter1" stdDeviation="8"/>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"/>
+            <feColorMatrix in="shadowBlurOuter1" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.02 0"/>
+        </filter>
+        <filter id="e5lqif1gac" width="115%" height="112%" x="-7.5%" y="-6%" filterUnits="objectBoundingBox">
+            <feOffset in="SourceAlpha" result="shadowOffsetOuter1"/>
+            <feGaussianBlur in="shadowOffsetOuter1" result="shadowBlurOuter1" stdDeviation="8"/>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"/>
+            <feColorMatrix in="shadowBlurOuter1" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.02 0"/>
+        </filter>
+        <path id="rwls6z6nhb" d="M4 0h256l60 60v308c0 2.21-1.79 4-4 4H4c-2.21 0-4-1.79-4-4V4c0-2.21 1.79-4 4-4z"/>
+        <path id="4ed5u2yetd" d="M4 0h268l48 48v348c0 2.21-1.79 4-4 4H4c-2.21 0-4-1.79-4-4V4c0-2.21 1.79-4 4-4z"/>
+    </defs>
+    <g fill="none" fill-rule="evenodd">
+        <g>
+            <g>
+                <g>
+                    <g fill-rule="nonzero" transform="translate(-155 -347) translate(155 347) translate(60 20)">
+                        <use fill="#000" filter="url(#nrooc6lm8a)" xlink:href="#rwls6z6nhb"/>
+                        <path fill="#FFF" fill-rule="evenodd" stroke="#DADBDC" stroke-linejoin="square" d="M259.793.5L319.5 60.207V368c0 .966-.392 1.841-1.025 2.475-.634.633-1.509 1.025-2.475 1.025h0H4c-.966 0-1.841-.392-2.475-1.025C.892 369.84.5 368.966.5 368h0V4c0-.966.392-1.841 1.025-2.475C2.16.892 3.034.5 4 .5h255.793z"/>
+                    </g>
+                    <g fill-rule="nonzero" transform="translate(-155 -347) translate(155 347) translate(60 20)">
+                        <use fill="#000" filter="url(#e5lqif1gac)" xlink:href="#4ed5u2yetd"/>
+                        <path fill="#FFF" fill-rule="evenodd" stroke="#DADBDC" stroke-linejoin="square" d="M271.793.5L319.5 48.207V396c0 .966-.392 1.841-1.025 2.475-.634.633-1.509 1.025-2.475 1.025h0H4c-.966 0-1.841-.392-2.475-1.025C.892 397.84.5 396.966.5 396h0V4c0-.966.392-1.841 1.025-2.475C2.16.892 3.034.5 4 .5h267.793z"/>
+                    </g>
+                    <path fill="#E9EBED" d="M272 0l48 48h-44c-2.21 0-4-1.79-4-4V0z" transform="translate(-155 -347) translate(155 347) translate(60 20)"/>
+                    <text fill="#A1A1A2" font-family="PingFangSC-Regular, PingFang SC" font-size="20" transform="translate(-155 -347) translate(155 347) translate(60 20)">
+                        <tspan x="72" y="365">腾讯文档</tspan>
+                    </text>
+                    <g>
+                        <path fill="#1E6FFF" d="M4 0h16c2.21 0 4 1.79 4 4v16c0 2.21-1.79 4-4 4H4c-2.21 0-4-1.79-4-4V4c0-2.21 1.79-4 4-4z" transform="translate(-155 -347) translate(155 347) translate(60 20) translate(40 344)"/>
+                        <path fill="#FFF" fill-rule="nonzero" d="M12.104 2L11.164 7.407 2 7.423 5.982 11.78 10.401 11.78 8.264 24 13.902 24 16.038 11.78 22.692 11.78 22.923 11.775z" transform="translate(-155 -347) translate(155 347) translate(60 20) translate(40 344)"/>
+                        <path fill="#02DCFF" fill-rule="nonzero" d="M24 5l-5.398-5-.593 4.269c-.065.381.219.731.593.731H24z" transform="translate(-155 -347) translate(155 347) translate(60 20) translate(40 344)"/>
+                    </g>
+                    <path fill="#F8F9FA" d="M40 60H200V78H40zM40 96H100V102H40zM40 144H280V154H40zM40 172H280V182H40zM40 200H280V210H40zM40 224H280V234H40zM40 274H190V284H40zM40 294H100V304H40z" transform="translate(-155 -347) translate(155 347) translate(60 20)"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
