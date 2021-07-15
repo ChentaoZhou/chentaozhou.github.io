@@ -13,6 +13,8 @@ OC像是**C语言**和**面向对象编程（OOP）** 的结合。如果对两�
 这个视频很适合第一次接触Objective-C（以下简称OC）入门的同学，它的前半小时是在介绍C语言，接触过C语言的同学可以直接跳到34:53开始看。视频里非常快速的介绍了OC语言的一些基本操作、对字符串和数组的操作、构建一个类、Category和Protocol的基本用法等等。**它不会深入的解释一个概念或原理，只是演示了一遍基本操作，同学们可以跟着视频快速的敲一遍这些代码，就可以迅速的对这个语言的用法熟悉起来。** 
 如果想要理解的深入，可以配合书籍或者自己搜索一些相关的概念来完善。这篇笔记中也基于视频内容增加了一些从其他途径收集到的解释以及自己的理解。
 
+
+
 ## 一、常用操作
 
 ### 1. HelloWorld
@@ -501,20 +503,23 @@ NS_ASSUME_NONNULL_END
 ```
 ### 5. Extention
 这个概念在视频中没有提到，但是其实应用的也非常广泛，这里参考一篇文章中的解释：
-> Extension(扩展/延展):
-> 匿名的特殊Category。类有时需要一些只为自己所见、所用的私有方法，这种私有方法可以通过延展（Extension）的方式来声明，定义的方法在类本身的@implementation代码区域中进行实现。
->
-> 和Category相比：
-> - 在类别(Category)中只能添加方法，方法都是**公有**的；在类扩展(Extension)中，既可以添加方法,也可以添加**实例变量**，但是添加的内容都是类**私有**的,只能在类的内部访问。
-> - Extension声明的方法必须实现。
-> - 因为具体实现在类本身的文件中，所以Extension只有.h文件。
->
-> 参考文章：[Category、Protocol、Extension文件区别](https://www.jianshu.com/p/c301e196437c)
+
+Extension(扩展/延展):
+匿名的特殊Category。类有时需要一些只为自己所见、所用的私有方法，这种私有方法可以通过延展（Extension）的方式来声明，定义的方法在类本身的@implementation代码区域中进行实现。
+
+和Category相比：
+- 在类别(Category)中只能添加方法，方法都是**公有**的；在类扩展(Extension)中，既可以添加方法,也可以添加**实例变量**，但是添加的内容都是类**私有**的,只能在类的内部访问。
+- Extension声明的方法必须实现。
+- 因为具体实现在类本身的文件中，所以Extension只有.h文件。
+
+参考文章：[Category、Protocol、Extension文件区别](https://www.jianshu.com/p/c301e196437c)
+
 ### 6. Protocol
 OC中的Protocol类似Swift中的Protocol，也类似Java中的Interface接口。
 简单的说，它不是对某个类的扩展，而是独立地定义一种“能力”。Protocol中会定义一些方法，但是不需要提供具体的实现，其他类去实现这个Protocol的时候，相当于拥有了这种“能力”，但也必须要为这些方法提供实现。
 因为不需要自己实现，所以Protocol也只需要一个`.h`文件
 举一个学习Java时最常看到的例子：
+
 ```objectivec
 #import <Foundation/Foundation.h>
 
