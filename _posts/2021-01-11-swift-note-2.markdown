@@ -1,0 +1,243 @@
+---
+layout: post
+title: Swift学习笔记2 - 概念补充
+image: 6.jpg
+date: 2021-01-11 16:36:20 +0200
+tags: [Flutter]
+categories: Flutter
+---
+
+## <h2 id="1">ViewBuilder</h2>
+
+ViewBuilder的存在，是基于Swift的一种支持“面向列表的语法(list-oriented syntax)”的技术。它让我们可以用更方便的语法来管理View的列表。
+
+`@ViewBuilder`可以用来标注任何返回值是`some View`的函数。标注之后，函数的返回类型不会变，但是他会把所有的内容当成一个**View列表**，然后合并为一个View。
+
+它合并成的View可能是一个`TupleView`（包含2-10个View）；如果View在创建的时候有用到`if-else`的逻辑，那么会是一个`_ConditionalContent View`（非公开接口）；如果原本的内容就是空的，也可能会是一个空View。但是其实我们并不在意它本质是什么，我们只需要知道它是View就好。
+
+例如：
+
+```swift
+@ViewBuilder
+func front(of card: Card) -> some View {
+    RoundedRectangle(cornerRadius: 10) 
+  RoundedRectangle(cornerRadius: 10).stroke()
+  Text(card.content)
+}
+```
+
+一般来说我们会想要把多个View放进一个`Group`中之类的，但是在标注了`@ViewBuilder`之后，这个大括号会直接把内部的内容放在一起解释成一个View的列表。比如上面这些代码实际上会得到一个`TupleView<RoundedRectangle, RoundedRectangle, Text>`。
+
+另外，`@ViewBuilder`也可以标记一个“返回一个View的参数”。我们知道在Swift里面函数是可以作为参数的，所以这样类型的参数也可以用ViewBuilder标记。它的意思依旧是，返回的内容会是一个View列表。
+
+但是，经过这样处理的View，它内部的View我们是无法提取的，`ViewBuilder`某种意义上来说是“私有”的，我们无法从中获取其中的内容。
+
+---
+
+## <h2 id="2">Property Observer</h2>
+
+Property Observer是一种”监视“一个变量的方式，可以当这个变量被改变时去执行一些代码。比方说下面这个例子，其中`newValue`就是即将被设置上去的新值。
+
+```swift
+var isFaceUp: Bool {
+  willSet {
+    if newValue {
+      ...
+    } else {
+      ...
+    }
+  }
+}
+```
+
+另外除了`willSet`之外还有`didSet`。在`didSet`中可以通过`oldValue`使用旧的变量值。
+
+---
+
+## <h2 id="3">@State</h2>
+
+要注意，在SwiftUI中，我们的View都是read-only的。可以把他们都当成`let`，不能被改变。我们自己设置变量`var`仅仅是让这个变量在View被创建时被赋值，并不意味着它们之后还可以被更改。函数式编程的其中一个特点就是，它里面的东西的**可变性**都非常清晰，所以我们可以清楚地知道什么可以变，当有东西改变时，我们也可以很容易地知会。
+
+在我们使用MVVM模型的应用中，我们的View一般都是”无状态(stateless)“的。View应该仅仅反映Model的变化，所以我们的State应该都在Model中。但是有时候，View也是需要一些临时的State的，例如当我们要展示一个弹出提醒，需要记录一个`Bool`值来表示其展示与否，或者需要一个View来收集用户数据，需要临时记录用户的输入，等等。在展示动画的时候，我们也需要保存一种这样的暂时变量——`Future`。一般来说动画只会持续一段时间，在这段时间我们需要利用暂时的变量来展示View。
+
+对这些用于临时状态的变量，我们必须要用`@state`来对它进行标记。
+
+```swift
+@State private var somethingTemporary: SomeType // 什么类型都可以
+```
+
+**如果这样的变量被改变，会造成View的重绘！**（可以看作一个自带的Property Observer...）同时，这样的变量会被存储在**堆**中（因为我们的View本身是readOnly的）。
+
+---
+
+## <h2 id="4">Gesture手势</h2>
+
+**获取用户输入**
+
+SwiftUI可以识别用户的手指在屏幕上所做的手势，可以同时涉及多个手指（多点触控）。我们可以处理这些用户的手势，例如拖动、点击、捏（放大缩小手势）等等。
+
+`.gesture`这个modifier可以让你的View识别用户的手势：
+
+```swift
+myView.gesture(theGesture)
+```
+
+**创建一个Gesture**
+
+```swift
+var theGesture: some Gesture {
+   return TapGesture(count: 2)
+}
+```
+
+上面的例子是一个双击手势。
+
+那么我们要怎么识别一个手势的发生呢？这取决于手势是否是”离散的“。
+
+### 离散的手势
+
+`TapGesture`就是一种离散的手势，它会”一次性发生“，并不会持续一段时间或者是有一个动作的过程（但其实长按也可以当成是离散的）。要在识别出这种离散的手势的时候做出反应，可以非常简单的使用`.onEnd{}`方法。
+
+```swift
+var theGesture: some Gesture {
+    return TapGesture(count: 2)
+        .onEnded { /* do something */ }
+}
+```
+
+但是这种离散的手势的处理有更简便的写法，之前应该都已经接触过了：
+
+```swift
+myView.onTapGesture(count: Int) { /* do something */ } 
+myView.onLongPressGesture(...) { /* do something */ }
+```
+
+### 非离散的手势
+
+其他很多手势是不离散的，一般来说是有持续动作的手势。对于这种手势，我们不是仅仅识别它发生的完成，还可以在发生的去处理它，也就是手指在动作的同时就进行实时的处理。这种情况例如手指拖动`DragGesture`、放大缩小`MagnificationGesture`，旋转`RotationGesture`（长按手势`LongPressGesture`也可以看做是非离散的手势，它也包括手指按下和抬起两个动作）。
+
+不离散的手势我们也可以在设置在它结束之后进行的操作：
+
+```swift
+var theGesture: some Gesture {
+    DragGesture(...)
+        .onEnded { value in /* do something */ }
+}
+```
+
+需要注意的是，这时`.onEnded`会传递给我们一个值`value`，这个值会告诉我们一些信息，一般是这个手势结束时的“状态”。这个值具体是什么，对于不同的手势来说都是不同的，例如：
+
+- `DragGesture`拖动：一个保存了包含开始位置、结束位置等信息的struct。
+- `MagnificationGesture`放大：放大的规模（手指张开的程度）
+- `RotationGesture`旋转：从旋转的角度（手指转动的角度）
+
+但是，非离散手势的特点是它有一个持续的过程，因此，在它正在发生的过程中，我们可以同时做一些操作。我们可以在每次发生变化的时候（即手指的移动），都进行”状态的更新“。
+
+#### `@GestureState`
+
+这个“状态”，存储在一个特殊的变量中，这个变量会被一个`@GestureState`标记。
+
+```swift
+@GestureState var myGestureState: MyGestureStateType = <starting value>
+```
+
+这个变量可以是一个任何类型的变量。他就和被标记为`@state`的变量类似，我们可以在里面存储任何我们想要在手势发生过程中使得View进行改变的相关数据。例如在拖动的过程中，可以用它来存手指移动的距离。但是，当手势结束的时候，它都会回到初始值！（除非你在`.onEnded`中再去做修改，后面会讲。）也就是说，它只在手势发生的这个比较短暂的过程中存在意义。
+
+**处理非离散的手势**：
+
+处理非离散手势的时候，也就是当手指正在移动的时候，我们需要收集所有需要的信息，来在手势发生的同时为视图绘制`@GestureState`。
+
+```swift
+var theGesture: some Gesture {
+    DragGesture(...)
+        .updating($myGestureState) { value, myGestureState, transaction in 
+        myGestureState = /* 通常是根据Gesture的value来进行处理 */
+    }
+        .onEnded { value in /* do something */ }
+}
+```
+
+- 你传递给`.updating`方法的闭包会在手指移动时被调用。
+
+- 闭包中的这个`value`参数和`.onEnded`中的相同，表示手指的状态
+
+- `$myGestureState`参数就是我们的`@GestureState`，这是唯一一个我们可以修改它的机会。
+
+——在`.updating`中我们可以用获取到的`value`来更新`@GestureState`。当手势结束的时候，`@GestureState`就会被重置。也就是说，`@GestureState`的意义在于决定手指在屏幕上移动的过程中视图如何显示。那么当手指抬起之后、手势结束之后的视图怎么办呢？因此我们可能也需要在`.onEnded`中修改一些状态。
+
+另外有一个更简便的，不需要我们去跟踪`@GestureState`的方法，只适用与当我们要做的反应和手指**实际的位置**直接相关时（例如用户可以用手指在屏幕上画画）。
+
+```swift
+var theGesture: some Gesture {
+    DragGesture(...)
+        .onChanged { value in
+            /* 处理value(在这里是手指的状态) */
+        }
+        .onEnded { value in /* do something */ }
+}
+```
+
+但是，如果不是这种情况，我们更多时候想要的是相对的位置，即手指按下后移动了多远才抬起，这种情况下我们就需要使用`.updating()`。
+
+
+
+---
+
+## <h2 id="5">Swift多线程</h2>
+
+### 队列
+
+多线程的核心：把一个闭包放到某一个队列上。
+
+- main Queue
+  - 最重要的一个队列
+  - UI相关的操作必须在这个队列中执行（不然会报错）
+  - 仅由主线程串行执行
+- Background Queue（global）
+  - 可能有多个线程执行这个队列，所以经常是并行执行的
+  - 同时也与主线程并行
+  - 我们可以通过`qos`来定义一个队列的优先级
+  - 但是优先级不可能超过主队列
+
+队列操作的基本API被称为GCD(Grand Central Dispatch大规模中央调度)。
+
+### 创建一个队列
+
+`DispatchQueue.main` 执行UI操作的主线程
+
+`DispatchQueue.global(qos: QOS)`
+
+`qos`：
+
+- `.userInteractive`需要快速完成，可能有UI基于此
+- `.userInitiated`基于用户要求，所以现在需要完成
+- `.utility`需要完成，但是用户当前没有要求
+- `.background`后台运行，可能是维护任务，例如清理等等
+
+### 在队列上放置闭包
+
+```swift
+let queue = DispatchQueue.main // 或者 DispatchQueue.global(qos:) 
+queue.async { /* 闭包代码 */ }
+queue.sync { /* 闭包代码 */ }
+```
+
+但是`.sync`表示同步，它会阻塞线程，直到闭包在队列上获得执行并完成。因此在UI操作的代码中我们绝对不能使用`.sync`。一般来说用的都是`.async`，让闭包异步地在未来某一刻被执行，不影响当前代码。
+
+### 嵌套
+
+```swift
+DispatchQueue(global: .userInitiated).async {
+    // 在这里我们可以执行一些耗时操作，为了不影响UI的即时更新和相应，我们不在主线程执行。
+  // ...
+  // 如果完成时需要更新UI，那么就再往主线程添加闭包：
+    DispatchQueue.main.async {
+        // 更新UI~
+  }
+}
+```
+
+不过需要知道的是，很多时候我们不需要自己使用`DispatchQueue.global(qos:)`，有很多函数会自动的在`global`队列中执行工作，例如`URLSession`（从URL获取数据，获取到后回调）。所以我们需要注意的更多是在需要更新UI的时候，使用`Dispatch.main.async{ }`来确保UI操作被放在主队列中。
+
+
+
