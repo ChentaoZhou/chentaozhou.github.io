@@ -3,7 +3,7 @@ layout: post
 title: Swift学习笔记 基本语法和概念
 image: 4.jpg
 date: 2020-11-19 20:01:00 +0200
-tags: [iOS]
+tags: [iOS, Swift]
 categories: iOS
 ---
 为了入门iOS开发，导师给我推荐了一个斯坦福2020春季发布的网课作为Swift语言的学习材料。链接：[CS193p - Developing apps for iOS](https://cs193p.sites.stanford.edu)

@@ -3,7 +3,7 @@ layout: post
 title: Objective-C学习笔记 基本语法和概念
 image: 7.jpg
 date: 2020-11-24 20:01:00 +0200
-tags: [iOS]
+tags: [iOS, Objective-C]
 categories: iOS
 ---
 OC像是**C语言**和**面向对象编程（OOP）** 的结合。如果对两者都有所了解，应该也很容易理解它的逻辑，只需要熟悉一些它特有的语法和符号用法等等即可。
