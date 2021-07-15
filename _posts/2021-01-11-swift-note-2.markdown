@@ -3,8 +3,8 @@ layout: post
 title: Swift学习笔记2 - 概念补充
 image: 6.jpg
 date: 2021-01-11 16:36:20 +0200
-tags: [Flutter]
-categories: Flutter
+tags: [iOS, Swift]
+categories: iOS
 ---
 
 ## <h2 id="1">ViewBuilder</h2>
