@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Flutter学习笔记: ChangeNotifierProvider and Consumer
+title: Sample post
 image: 3.jpg
 date: 2020-12-07 17:20:20 +0200
 tags: [Flutter]
