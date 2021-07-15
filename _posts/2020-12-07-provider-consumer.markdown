@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Sample post
+title: Flutter: ChangeNotifierProvider and Consumer
 image: 3.jpg
 date: 2020-12-07 17:20:20 +0200
 tags: [Flutter]
