@@ -6,6 +6,11 @@ date: 2020-11-24 20:01:00 +0200
 tags: [iOS, Objective-C]
 categories: iOS
 ---
+
+Tutorial of the programming language Objective-C, including the basic syntax and concept. OC语言新手教程，包含最基本的语法和概念。
+
+***
+
 OC像是**C语言**和**面向对象编程（OOP）** 的结合。如果对两者都有所了解，应该也很容易理解它的逻辑，只需要熟悉一些它特有的语法和符号用法等等即可。
 
 推荐一个视频教程：[Objective C Tutorial - Derek Banas](https://www.youtube.com/watch?v=5esQqZIJ83g)

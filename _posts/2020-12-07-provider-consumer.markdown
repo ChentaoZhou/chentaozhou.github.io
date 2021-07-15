@@ -6,7 +6,10 @@ date: 2020-12-07 17:20:20 +0200
 tags: [Flutter]
 categories: Flutter
 ---
+A simple introduction of the Flutter package Provider and how to use it.
 最近接触的一个需求涉及到了Provider和Consumer的使用，非常方便好用，因此简单的学习并记录一下。
+
+***
 
 参考阅读：
 

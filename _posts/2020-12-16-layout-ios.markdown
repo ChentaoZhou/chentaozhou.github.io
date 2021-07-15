@@ -6,6 +6,10 @@ date: 2020-12-16 20:02:00 +0200
 tags: [iOS, Objective-C]
 categories: iOS
 ---
+
+An introduction and explanation of the UI layout approach: AutoResizing and AutoLayout, in iOS developing.
+
+***
 # AutoResizing、AutoLayout
 
 在进行UI开发的时候，布局经常是一个非常重要的问题。
