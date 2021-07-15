@@ -1,20 +1,22 @@
 ---
 layout: post
-title: Base64编码
+title: Base64编码和JPEG数据格式
 image: 3.jpg
 date: 2021-06-28 16:36:20 +0200
 tags: [base64, JPEG]
 categories: Common
 ---
+Intro: Base64 encoding & JPEG data format.
+前段时间的需求中涉及到图片的Base64数据，因此去做了一些了解。其实它的概念和原理都非常的简单，下面就从这几个方面介绍一下。
 
-
-### Base64编码
-
-前段时间的需求中涉及到图片的Base64数据，因此去做了一些了解。其实它的概念和原理都非常的简单，下面就从这几个方面介绍一下：
+***
 
 - Base64是什么
 - Base64的编码原理
 - 为什么要用Base64
+
+
+### Base64编码
 
 ##### Base64是什么
 

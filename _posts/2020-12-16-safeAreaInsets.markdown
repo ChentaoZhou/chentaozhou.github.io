@@ -6,9 +6,11 @@ date: 2020-12-16 20:01:00 +0200
 tags: [iOS]
 categories: iOS
 ---
-> 关于`safeAreaInsets`是什么：[iOS开发：AutoLayout与Autoresizing、SafeArea安全区](http://km.oa.com/articles/show/483729?ts=1608117022)
-
+A problem of getting 0 from safeAreaInsets in viewDidLoad.
 前两天在用AutoLayout的时候遇到一个问题。在viewDidLoad方法中设置约束的时候，想取`view.safeAreaInset.bottom`来将页面底部的按钮布局到安全区中，结果这个值取出来为0。打断点测试了一下，又打了日志，发现在这里取到的`safeAreaInset`是(0, 0, 0, 0)。
+
+***
+> 关于`safeAreaInsets`是什么：[iOS开发：AutoLayout与Autoresizing、SafeArea安全区](http://km.oa.com/articles/show/483729?ts=1608117022)
 
 查询了一下，找到了这个：[stackoverflow - safeAreaInsets in UIView is 0 on an iPhone X](https://stackoverflow.com/questions/47032855/safeareainsets-in-uiview-is-0-on-an-iphone-x)。
 

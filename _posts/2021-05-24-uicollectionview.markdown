@@ -6,11 +6,13 @@ date: 2021-05-24 16:36:20 +0200
 tags: [iOS, Swift]
 categories: iOS
 ---
+`UICollectionView`是iOS开发中比较常用的一种组件。它通常用于构建栅格布局（Grid Layout）的视图。
 
+***
 
 ### 简介
 
-`UICollectionView`是iOS开发中比较常用的一种组件。它通常用于构建栅格布局（Grid Layout）的视图，类似这样：
+类似这样：
 
 ![rybwD](image/rybwD.png)
 

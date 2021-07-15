@@ -6,7 +6,9 @@ date: 2021-01-11 16:36:20 +0200
 tags: [iOS, Swift]
 categories: iOS
 ---
+Learning note of programming language Swift. Including concepts: ViewBuilder, Property Observer, @State, Gesture, multithreading. 
 
+***
 ## ViewBuilder
 
 ViewBuilder的存在，是基于Swift的一种支持“面向列表的语法(list-oriented syntax)”的技术。它让我们可以用更方便的语法来管理View的列表。
